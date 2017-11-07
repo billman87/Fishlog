@@ -71,6 +71,482 @@ BOOT = 1
 	SetTimer , PostMessage , %PostMessage%
 return
 
+Logon:
+	if ENABLE_DEBUG = 1
+			LV_Add("", "- " A_ThisLabel)
+	gosub getpass
+	Gui 2:Margin, 5,5
+	Gui 2:Font, S10, Verdana
+	Gui 2:Add, Groupbox,	x5 	y0 	w230 h80, Enter User Name
+	Gui 2:Add, Groupbox, 	x5 	y80 w230 h80, Enter Password
+	Gui 2:Add, Edit, 		x20 y35 r1 Limit20 w200 h20 vPlayerName, %PlayerName%
+	Gui 2:Add, Edit, 		x20 y115 r1 Limit20 w200 h20 0x20 vmypass, %mypass%
+	Gui 2:Add, Button, 		x240 y10 w50 h150 0x8000 Default, OK
+	Gui 2:Show, AutoSize ,Logon
+Return
+
+Fishsize:
+	if ENABLE_DEBUG = 1
+			LV_Add("", "- "  A_ThisLabel)
+	gosub FISHREAD
+	Gui 3:Margin, 5,5
+	Gui 3:Add, Groupbox,w350 h420, Throwback Fish Under (LB)
+	Gui 3:Add, Text , x20 y40 h20  , Amberjack
+	Gui 3:Add, Text , x20 y60 h20 , Grouper
+	Gui 3:Add, Text , x20 y80 h20 , Red Snapper
+	Gui 3:Add, Text , x20 y100 h20 , Trout
+	Gui 3:Add, Text , x20 y120 h20 , Blue Marlin
+	Gui 3:Add, Text , x20 y140 h20 , Mackerel
+	Gui 3:Add, Text , x20 y160 h20 , Sea
+	Gui 3:Add, Text , x20 y180 h20 , Pike
+	Gui 3:Add, Text , x20 y200 h20 , Sail
+	Gui 3:Add, Text , x20 y220 h20 , Tuna
+	Gui 3:Add, Text , x20 y240 h20 , Eel
+	Gui 3:Add, Text , x20 y260 h20 , Dolphin
+	Gui 3:Add, Text , x20 y280 h20 , Shark
+	Gui 3:Add, Text , x20 y300 h20 , Turtle
+	Gui 3:Add, Text , x20 y320 h20 , Catfish
+	Gui 3:Add, Text , x20 y340 h20 , Swordfish
+	Gui 3:Add, Text , x20 y360 h20 , Squid
+	Gui 3:Add, Text , x20 y380 h20 , Barracuda
+	Gui 3:Add, Text , x200 y40 h20 , Piranha
+	Gui 3:Add, Text , x200 y60 h20 , Lobster
+	Gui 3:Add, Text , x200 y80 h20 , Cod
+	Gui 3:Add, Text , x200 y100 h20 , Sardine
+	Gui 3:Add, Text , x200 y120 h20 , Salmon
+	Gui 3:Add, Text , x200 y140 h20 , Shrimp
+	Gui 3:Add, Text , x200 y160 h20 , Sturgeon
+	Gui 3:Add, Text , x200 y180 h20 , Flounder
+	Gui 3:Add, Text , x200 y200 h20 , Haddock
+	Gui 3:Add, Text , x200 y220 h20 , Herring
+	Gui 3:Add, Text , x200 y240 h20 , Stingray
+	Gui 3:Add, Text , x200 y260 h20 , Carp
+	Gui 3:Add, Text , x200 y280 h20 , Halibut
+	Gui 3:Add, Text , x200 y300 h20 , Sole
+	Gui 3:Add, Text , x200 y320 h20 , Baby Seal
+	GUI 3:Add, Edit , x120 y40 w60  h20 vAmberjack ,%Amberjack%
+	GUI 3:Add, Edit , x120 y60 w60  h20 vGrouper,%Grouper%
+	GUI 3:Add, Edit , x120 y80 w60  h20 vRed ,%Red%
+	GUI 3:Add, Edit , x120 y100 w60 h20 vTrout ,%Trout%
+	GUI 3:Add, Edit , x120 y120 w60 h20 vBlue ,%Blue%
+	GUI 3:Add, Edit , x120 y140 w60 h20 vMackerel ,%Mackerel%
+	GUI 3:Add, Edit , x120 y160 w60 h20 vSea ,%Sea%
+	GUI 3:Add, Edit , x120 y180 w60 h20 vPike,%Pike%
+	GUI 3:Add, Edit , x120 y200 w60 h20 vSail ,%Sail%
+	GUI 3:Add, Edit , x120 y220 w60 h20 vTuna ,%Tuna%
+	GUI 3:Add, Edit , x120 y240 w60 h20 vEel ,%Eel%
+	GUI 3:Add, Edit , x120 y260 w60 h20 vDolphin ,%Dolphin%
+	GUI 3:Add, Edit , x120 y280 w60 h20 vShark ,%Shark%
+	GUI 3:Add, Edit , x120 y300 w60 h20 vTurtle ,%Turtle%
+	GUI 3:Add, Edit , x120 y320 w60 h20 vCatfish ,%Catfish%
+	GUI 3:Add, Edit , x120 y340 w60 h20 vSwordfish ,%Swordfish%
+	GUI 3:Add, Edit , x120 y360 w60 h20 vSquid ,%Squid%
+	GUI 3:Add, Edit , x120 y380 w60 h20 vBarracuda ,%Barracuda%
+	GUI 3:Add, Edit , x280 y40 w60  h20 vPiranha ,%Piranha%
+	GUI 3:Add, Edit , x280 y60 w60  h20 vLobster ,%Lobster%
+	GUI 3:Add, Edit , x280 y80 w60  h20 vCod ,%Cod%
+	GUI 3:Add, Edit , x280 y100 w60 h20 vSardine ,%Sardine%
+	GUI 3:Add, Edit , x280 y120 w60 h20 vSalmon ,%Salmon%
+	GUI 3:Add, Edit , x280 y140 w60 h20 vShrimp ,%Shrimp%
+	GUI 3:Add, Edit , x280 y160 w60 h20 vSturgeon ,%Sturgeon%
+	GUI 3:Add, Edit , x280 y180 w60 h20 vFlounder ,%Flounder%
+	GUI 3:Add, Edit , x280 y200 w60 h20 vHaddock ,%Haddock%
+	GUI 3:Add, Edit , x280 y220 w60 h20 vHerring ,%Herring%
+	GUI 3:Add, Edit , x280 y240 w60 h20 vStingray ,%Stingray%
+	GUI 3:Add, Edit , x280 y260 w60 h20 vCarp ,%Carp%
+	GUI 3:Add, Edit , x280 y280 w60 h20 vHalibut ,%Halibut%
+	GUI 3:Add, Edit , x280 y300 w60 h20 vSole ,%Sole%
+	GUI 3:Add, Edit , x280 y320 w60 h20 vBabyseal ,%Babyseal%	
+	GUI 3:Add, Edit , x280 y380 w60 h20 vDelay ,  %Delay%
+	Gui 3:Add, Text , x200 y380     h20        , Delay
+	Gui 3:Add, Checkbox , x380 y290     h20	vAUTOFISHDISPLAY Checked%AUTOFISHDISPLAY%, Show Catch
+	Gui 3:Add, Groupbox , x370 y35 h240 w130  	  , Keep Fish
+	Gui 3:Add, Button , x380 y70  w100 , All
+	Gui 3:Add, Button , x380 y110 w100 , Small
+	Gui 3:Add, Button , x380 y150 w100 , Medium
+	Gui 3:Add, Button , x380 y190 w100 , Large
+	Gui 3:Add, Button , x380 y230 w100 , Huge
+	Gui 3:Add, Button , x380 y340 w100 h60 , Apply
+	Gui 3:Show, AutoSize ,Fish
+	
+
+Return
+Preferences:
+	if ENABLE_DEBUG = 1
+		LV_Add("", "-  "  A_ThisLabel)
+	gosub INIREAD
+	Gui 4:Margin, 10,5
+	Gui 4:Add, GroupBox, x20  y5 w150 h120 						, Auto Lotto
+	Gui 4:Add, Text, 	 x30  y30 w130  						, Prefered Number
+	Gui 4:Add, Text, 	 x30  y50 w130  						, 0 is Random
+	Gui 4:Add, Edit, 	 x30  y80 w30  vGUILOTTO				, %GUILOTTO%
+	
+	Gui 4:Add, GroupBox, x20  y135 w150 h120 					, Take Drugs 
+	Gui 4:Add, Text, 	 x30  y160 w130  						, Use Amount
+	Gui 4:Add, Text, 	 x30  y180 w130  						, On Keybind
+	Gui 4:Add, Edit, 	 x30  y205 w30  vTAKEDRUGSAMOUNT		, %TAKEDRUGSAMOUNT%
+	
+	Gui 4:Add, GroupBox, x20  y265 w150 h120 					, Not Used 
+	Gui 4:Add, Text, 	 x30  y290 w130  						, Not Used
+	Gui 4:Add, Text, 	 x30  y310 w130  						, Not Used
+	Gui 4:Add, Edit, 	 x30  y335 w30  						, 
+	
+	Gui 4:Add, GroupBox, 	x170 y5  w300 h120 					, Vehicle Color
+	Gui 4:Add, Text, 	 	x190 y30 w60  h20 					, Color 1
+	Gui 4:Add, ComboBox,	x260 y30 w190 r8 vCOLOR1 			, %COLOR1%||%COLORLIST%
+	Gui 4:Add, Text, 	 	x190 y70 w60  h20 					, Color 2
+	Gui 4:Add, ComboBox, 	x260 y70 w190 r8 vCOLOR2 			, %COLOR2%||%COLORLIST%
+	
+	Gui 4:Add, GroupBox, 	x170 y135 w300 h120 				, Others
+	gui 4:Add, Text, 		x190 y160 w140 h30 					, Bribe Amount
+	gui 4:Add, Edit, 		x300 y160 w100 h20 vBRIBEAMOUNT 	, %BRIBEAMOUNT%
+	gui 4:Add, Text, 		x190 y200 w140 h30 					, Dice Amount
+	gui 4:Add, Edit, 		x300 y200 w100 h20  vPLAYDICEAMOUNT	, %PLAYDICEAMOUNT%
+	
+
+	Gui 4:Add, GroupBox,	x470  y5 w300 h120 					, Server Addresses
+	gui 4:Add, Text,	 	x490 y30 w140 h30 					, Server 1 IP
+	gui 4:Add, Edit, 	 	x590 y30 w150 h20 vSERVER1 			, %SERVER1%
+	gui 4:Add, Text,	 	x490 y70 w140 h30 					, Server 2 IP
+	gui 4:Add, Edit,	 	x590 y70 w150 h20 vSERVER2			, %SERVER2%
+	
+	Gui 4:Add, GroupBox, 	x470 y135 w300 h120 				, Frame Rates
+	gui 4:Add, Text, 		x490 y160 w140 h30 					, FPS Lower Limit
+	gui 4:Add, Edit, 		x650 y160 w50 h20 vFPSLOW			, %FPSLOW%
+	gui 4:Add, Text, 		x490 y200 w140 h30 					, FPS Upper Limit
+	gui 4:Add, Edit, 		x650 y200 w50 h20 vFPSHIGH			, %FPSHIGH%
+
+	
+	TAKEDRUGSAMOUNT = 25
+	
+	gui 4:Add, Button, 		x660 y350 w100 h50 , Apply
+	
+	
+	
+	
+	;gui 4:Add, Text, x530 y230 w140 h40 , 												Chat Font Size
+	;gui 4:Add, Edit, x650 y230 w150 h20 vGUIFONT, %GUIFONT%
+	Gui 4:Show, AutoSize ,Preferences
+Return
+Keybinds:
+	if ENABLE_DEBUG = 1
+			LV_Add("", "-  " A_ThisLabel)
+	gosub INIREAD
+	gui 5:Add, Text, x20 y20 w600 h20 , Keybinder                             EXAMPLE   T/FishSlap{enter}                                    Enable
+	gui 5:Add, Text, x12 y60 w30 h20 , F1
+	gui 5:Add, Text, x12 y80 w30 h20 , F2
+	gui 5:Add, Text, x12 y100 w30 h20 , F3
+	gui 5:Add, Text, x12 y120 w30 h20 , F4
+	gui 5:Add, Text, x12 y140 w30 h20 , F5
+	gui 5:Add, Text, x12 y160 w30 h20 , F6
+	gui 5:Add, Text, x12 y180 w30 h20 , F7
+	gui 5:Add, Text, x12 y200 w30 h20 , F8
+	gui 5:Add, Text, x12 y220 w30 h20 , F9
+	gui 5:Add, Text, x12 y240 w30 h20 , F10
+	gui 5:Add, Text, x12 y260 w30 h20 , F11
+	gui 5:Add, Text, x12 y280 w30 h20 , F12
+	gui 5:Add, Edit, x42 y60 w370 h20  vF1 , %F1%
+	gui 5:Add, Edit, x42 y80 w370 h20  vF2, %F2%
+	gui 5:Add, Edit, x42 y100 w370 h20 vF3, %F3%
+	gui 5:Add, Edit, x42 y120 w370 h20 vF4, %F4%
+	gui 5:Add, Edit, x42 y140 w370 h20 vF5, %F5%
+	gui 5:Add, Edit, x42 y160 w370 h20 vF6, %F6%
+	gui 5:Add, Edit, x42 y180 w370 h20 vF7, %F7%
+	gui 5:Add, Edit, x42 y200 w370 h20 vF8, %F8%
+	gui 5:Add, Edit, x42 y220 w370 h20 vF9, %F9%
+	gui 5:Add, Edit, x42 y240 w370 h20 vF10, %F10%
+	gui 5:Add, Edit, x42 y260 w370 h20 vF11, %F11%
+	gui 5:Add, Edit, x42 y280 w370 h20 vF12, %F12%
+	gui 5:Add, CheckBox, x422 y60 w50 h20  VF1E  Checked%F1E%, 
+	gui 5:Add, CheckBox, x422 y80 w50 h20  VF2E  Checked%F2E%, 
+	gui 5:Add, CheckBox, x422 y100 w50 h20 VF3E  Checked%F3E%, 
+	gui 5:Add, CheckBox, x422 y120 w50 h20 VF4E  Checked%F4E%, 
+	gui 5:Add, CheckBox, x422 y140 w50 h20 VF5E  Checked%F5E%, 
+	gui 5:Add, CheckBox, x422 y160 w50 h20 VF6E  Checked%F6E%, 
+	gui 5:Add, CheckBox, x422 y180 w50 h20 VF7E  Checked%F7E%, 
+	gui 5:Add, CheckBox, x422 y200 w50 h20 VF8E  Checked%F8E%, 
+	gui 5:Add, CheckBox, x422 y220 w50 h20 VF9E  Checked%F9E%, 
+	gui 5:Add, CheckBox, x422 y240 w50 h20 VF10E Checked%F10E%, 
+	gui 5:Add, CheckBox, x422 y260 w50 h20 VF11E Checked%F11E%, 
+	gui 5:Add, CheckBox, x422 y280 w50 h20 VF12E Checked%F12E%, 
+	gui 5:Add, Text, x20 y20 w600 h20 , Keybinder                             EXAMPLE   T/FishSlap{enter}                                    Enable
+	gui 5:Add, Text, x500 y60 w30 h20 , 1
+	gui 5:Add, Text, x500 y80 w30 h20 , 2
+	gui 5:Add, Text, x500 y100 w30 h20 , 3
+	gui 5:Add, Text, x500 y120 w30 h20 , 4
+	gui 5:Add, Text, x500 y140 w30 h20 , 5
+	gui 5:Add, Text, x500 y160 w30 h20 , 6
+	gui 5:Add, Text, x500 y180 w30 h20 , 7
+	gui 5:Add, Text, x500 y200 w30 h20 , 8
+	gui 5:Add, Text, x500 y220 w30 h20 , 9
+	gui 5:Add, Text, x500 y240 w30 h20 , 0
+	gui 5:Add, Text, x500 y260 w30 h20 , -
+	gui 5:Add, Text, x500 y280 w30 h20 , =
+	gui 5:Add, Edit, x520 y60 w370 h20  vBIND1 ,%BIND1%
+	gui 5:Add, Edit, x520 y80 w370 h20  vBIND2, %BIND2%
+	gui 5:Add, Edit, x520 y100 w370 h20 vBIND3, %BIND3%
+	gui 5:Add, Edit, x520 y120 w370 h20 vBIND4, %BIND4%
+	gui 5:Add, Edit, x520 y140 w370 h20 vBIND5, %BIND5%
+	gui 5:Add, Edit, x520 y160 w370 h20 vBIND6, %BIND6%
+	gui 5:Add, Edit, x520 y180 w370 h20 vBIND7, %BIND7%
+	gui 5:Add, Edit, x520 y200 w370 h20 vBIND8, %BIND8%
+	gui 5:Add, Edit, x520 y220 w370 h20 vBIND9, %BIND9%
+	gui 5:Add, Edit, x520 y240 w370 h20 vBIND10, %BIND10%
+	gui 5:Add, Edit, x520 y260 w370 h20 vBIND11, %BIND11%
+	gui 5:Add, Edit, x520 y280 w370 h20 vBIND12, %BIND12%
+	gui 5:Add, CheckBox, x900 y60 w50 h20  vBIND1E  Checked%BIND1E%, 
+	gui 5:Add, CheckBox, x900 y80 w50 h20  vBIND2E  Checked%BIND2E%, 
+	gui 5:Add, CheckBox, x900 y100 w50 h20 vBIND3E  Checked%BIND3E%, 
+	gui 5:Add, CheckBox, x900 y120 w50 h20 vBIND4E  Checked%BIND4E%, 
+	gui 5:Add, CheckBox, x900 y140 w50 h20 vBIND5E  Checked%BIND5E%, 
+	gui 5:Add, CheckBox, x900 y160 w50 h20 vBIND6E  Checked%BIND6E%, 
+	gui 5:Add, CheckBox, x900 y180 w50 h20 vBIND7E  Checked%BIND7E%, 
+	gui 5:Add, CheckBox, x900 y200 w50 h20 vBIND8E  Checked%BIND8E%, 
+	gui 5:Add, CheckBox, x900 y220 w50 h20 vBIND9E  Checked%BIND9E%, 
+	gui 5:Add, CheckBox, x900 y240 w50 h20 vBIND10E Checked%BIND10E%, 
+	gui 5:Add, CheckBox, x900 y260 w50 h20 vBIND11E Checked%BIND11E%, 
+	gui 5:Add, CheckBox, x900 y280 w50 h20 vBIND12E Checked%BIND12E%, 	
+	
+	gui 5:Add, GroupBox, x40  y325 w220 h235 w250 , Enable/Disable Keybinds
+	gui 5:Add, CheckBox, x60  y350 w220 h20 vKEYPROGRAMON Checked%KEYPROGRAMON%, Programable
+	gui 5:Add, CheckBox, x60  y380 w220 h20 vKEYANIMATIONON Checked%KEYANIMATIONON%, Preset Game Commands
+	gui 5:Add, CheckBox, x60  y410 w220 h20 vKEYSKILLON Checked%KEYSKILLON%, Preset Item Purchase 
+	gui 5:Add, CheckBox, x60  y440 w220 h20 vKEYMENUON Checked%KEYMENUON%, Preset Menu Binds
+	gui 5:Add, CheckBox, x60  y470 w220 h20 vKEYFPSON Checked%KEYFPSON%, ALT+TAB Toggle FPS
+	gui 5:Add, CheckBox, x60  y500 w220 h20 vKEYWINKEY Checked%KEYWINKEY%, LWIN Sit 8
+	gui 5:Add, CheckBox, x60  y530 w220 h20 vKEYDLTOGGLE Checked%KEYDLTOGGLE%, CAPSLOCK Toggles DL
+	Gui 5:Add, Button, Default, Apply
+	gui 5:Show, , Keybinds
+return
+
+Files:
+Gui 7:  Add, Text,		x10  y10  w200 h40 , File Locations
+gui 7:  Add, CheckBox, 	x30  y40  w200 h40 vOUTPUTJOURNALON Checked%OUTPUTJOURNALON%,				Output history
+Gui 7:  Add, Text,     	x30  y100 w100 h30 , Log Location
+Gui 7:  Add, Edit, 		x140 y100 w600 h30 vCHATLOG , %logfile%
+Gui 7:  Add, Text, 		x30  y140 w100 h30 , Log to Dir
+Gui 7:  Add, Edit,		x140 y140 w600 h30 vlogdir , %logdir%
+Gui 7:  Add, Text, 		x30  y180 w100 h30 , History
+Gui 7:  Add, Edit, 		x140 y180 w600 h30 vhistory , %history%
+Gui 7:  Add, Text, 		x30  y220 w100 h30 , Whitelist
+Gui 7:  Add, Edit, 		x140 y220 w600 h30 vwhitelist , %whitelist%
+Gui 7:  Add, Text, 		x30  y260 w100 h30 , Blacklist
+Gui 7:  Add, Edit, 		x140 y260 w600 h30 vblacklist , %blacklist%
+;Gui 7:  Add, Text, x29 y2306 w100 h30 , logfile
+;Gui 7:  Add, Edit, x139 y306 w600 h30 , Edit
+;Gui 7:  Add, Button, x319 y356 w90 h30 , Defaults
+;Gui 7:  Add, Button, x439 y356 w90 h30 , Apply
+Gui 7:  Show, w800 h340
+return
+
+7GuiClose:
+LV_Add("","- " A_ThisLabel)
+	gui 7:submit
+	gosub INIWRITE
+	gui 7:destroy
+return
+Debug:
+Gui 8: Add, Text, x19 y16 w190 h30 , Debug
+Gui 8: Add, Text, x19 y66 w130 h30 , No Match
+Gui 8: Add, Edit, x159 y66 w70 h30 vENABLE_DEBUG_NOMATCH , %ENABLE_DEBUG_NOMATCH%
+Gui 8: Add, Text, x19 y106 w130 h30 , Fish
+Gui 8: Add, Edit, x159 y106 w70 h30 vENABLE_DEBUG_FISH , %ENABLE_DEBUG_FISH%
+Gui 8: Add, Text, x19 y146 w130 h30 , Dead
+Gui 8: Add, Edit, x159 y146 w70 h30 vENABLE_DEBUG_DEAD , %ENABLE_DEBUG_DEAD%
+Gui 8: Add, Text, x19 y186 w130 h30 , Money
+Gui 8: Add, Edit, x159 y186 w70 h30 vENABLE_DEBUG_MONEY , %ENABLE_DEBUG_MONEY%
+Gui 8: Add, Text, x19 y226 w130 h30 , GPS
+Gui 8: Add, Edit, x159 y226 w70 h30 vENABLE_DEBUG_GPS , %ENABLE_DEBUG_GPS%
+Gui 8: Add, Text, x19 y266 w130 h30 , Help
+Gui 8: Add, Edit, x159 y266 w70 h30 vENABLE_DEBUG_HELP , %ENABLE_DEBUG_HELP%
+Gui 8: Add, Text, x19 y306 w130 h30 , Jury
+Gui 8: Add, Edit, x159 y306 w70 h30 vENABLE_DEBUG_JURY , %ENABLE_DEBUG_JURY%
+Gui 8: Add, Text, x19 y346 w130 h30 , Lotto
+Gui 8: Add, Edit, x159 y346 w70 h30 vENABLE_DEBUG_LOTTO , %ENABLE_DEBUG_LOTTO%
+Gui 8: Add, Text, x19 y386 w130 h30 , Time
+;Gui 8: Add, Edit, x159 y386 w70 h30 vENABLE_DEBUG_TIME , %ENABLE_DEBUG_TIME%
+Gui 8: Add, Text, x19 y426 w130 h30 , Crime
+Gui 8: Add, Edit, x159 y426 w70 h30 vENABLE_DEBUG_CRIME , %ENABLE_DEBUG_CRIME%
+Gui 8: Add, Text, x19 y466 w130 h30 , Work
+Gui 8: Add, Edit, x159 y466 w70 h30 vENABLE_DEBUG_WORK , %ENABLE_DEBUG_WORK%
+Gui 8: Add, Text, x19 y506 w130 h30 , Stock
+Gui 8: Add, Edit, x159 y506 w70 h30 vENABLE_DEBUG_STOCK , %ENABLE_DEBUG_STOCK%
+Gui 8: Add, Text, x19 y546 w130 h30 , PM
+Gui 8: Add, Edit, x159 y546 w70 h30 vENABLE_DEBUG_PM , %ENABLE_DEBUG_PM%
+Gui 8: Add, Text, x269 y66 w130 h30 , MSG
+Gui 8: Add, Edit, x409 y66 w70 h30 vENABLE_DEBUG_MSG , %ENABLE_DEBUG_MSG%
+Gui 8: Add, Text, x269 y106 w130 h30 , Dice
+Gui 8: Add, Edit, x409 y106 w70 h30 vENABLE_DEBUG_DICE , %ENABLE_DEBUG_DICE%
+Gui 8: Add, Text, x269 y146 w130 h30 , Time Stats
+Gui 8: Add, Edit, x409 y146 w70 h30 vENABLE_DEBUG_TIMESTAT , %ENABLE_DEBUG_TIMESTAT% 
+Gui 8: Add, Text, x269 y186 w130 h30 , Flower
+Gui 8: Add, Edit, x409 y186 w70 h30 vENABLE_DEBUG_FLOWER , %ENABLE_DEBUG_FLOWER% 
+Gui 8: Add, Text, x269 y226 w130 h30 , Server
+Gui 8: Add, Edit, x409 y226 w70 h30 vENABLE_DEBUG_SERVER , %ENABLE_DEBUG_SERVER% 
+Gui 8: Add, Text, x269 y266 w130 h30 , Bonus
+Gui 8: Add, Edit, x409 y266 w70 h30 vENABLE_DEBUG_BONUS , %ENABLE_DEBUG_BONUS% 
+Gui 8: Add, Text, x269 y306 w130 h30 , Whisper
+Gui 8: Add, Edit, x409 y306 w70 h30 vENABLE_DEBUG_WHISPER , %ENABLE_DEBUG_WHISPER% 
+Gui 8: Add, Text, x269 y346 w130 h30 , Dispatch
+Gui 8: Add, Edit, x409 y346 w70 h30 vENABLE_DEBUG_DISPATCH , %ENABLE_DEBUG_DISPATCH% 
+Gui 8: Add, Text, x269 y386 w130 h30 , Crime Report
+Gui 8: Add, Edit, x409 y386 w70 h30 vENABLE_DEBUG_CRIMEREPORT , %ENABLE_DEBUG_CRIMEREPORT% 
+Gui 8: Add, Text, x269 y426 w130 h30 , CnR
+Gui 8: Add, Edit, x409 y426 w70 h30 vENABLE_DEBUG_CNR , %ENABLE_DEBUG_CNR% 
+Gui 8: Add, Text, x269 y466 w130 h30 , House
+Gui 8: Add, Edit, x409 y466 w70 h30 vENABLE_DEBUG_HOUSE , %ENABLE_DEBUG_HOUSE% 
+Gui 8: Add, Text, x269 y506 w130 h30 , Vehicle
+Gui 8: Add, Edit, x409 y506 w70 h30 vENABLE_DEBUG_VEHICLE , %ENABLE_DEBUG_VEHICLE% 
+Gui 8: Add, Text, x269 y546 w130 h30 , Player
+Gui 8: Add, Edit, x409 y546 w70 h30 vENABLE_DEBUG_PLAYER , %ENABLE_DEBUG_PLAYER% 
+Gui 8: Add, Text, x519 y66 w130 h30 , Vendor
+Gui 8: Add, Edit, x659 y66 w70 h30 vENABLE_DEBUG_VENDOR ,  %ENABLE_DEBUG_VENDOR% 
+Gui 8: Add, Text, x519 y106 w130 h30 , Money Bag
+Gui 8: Add, Edit, x659 y106 w70 h30 vENABLE_DEBUG_MONEYBAG , %ENABLE_DEBUG_MONEYBAG% 
+Gui 8: Add, Text, x519 y146 w130 h30 , Birthdays
+Gui 8: Add, Edit, x659 y146 w70 h30 vENABLE_DEBUG_BDAYS , %ENABLE_DEBUG_BDAYS% 
+Gui 8: Add, Text, x519 y186 w130 h30 , Purchase
+Gui 8: Add, Edit, x659 y186 w70 h30 vENABLE_DEBUG_PURCHASE , %ENABLE_DEBUG_PURCHASE% 
+Gui 8: Add, Text, x519 y226 w130 h30 , Delivery
+Gui 8: Add, Edit, x659 y226 w70 h30 vENABLE_DEBUG_DELIVERY , %ENABLE_DEBUG_DELIVERY% 
+Gui 8: Add, Text, x519 y266 w130 h30 , Pet
+Gui 8: Add, Edit, x659 y266 w70 h30 vENABLE_DEBUG_PET , %ENABLE_DEBUG_PET% 
+Gui 8: Add, Text, x519 y306 w130 h30 , Driver
+Gui 8: Add, Edit, x659 y306 w70 h30 vENABLE_DEBUG_DRIVER , %ENABLE_DEBUG_DRIVER%
+Gui 8: Add, Text, x519 y346 w130 h30 , Welfare
+Gui 8: Add, Edit, x659 y346 w70 h30 vENABLE_DEBUG_WELFARE , %ENABLE_DEBUG_WELFARE%
+					
+Gui 8: Add, Text, x519 y386 w130 h30 , Disable Chat
+Gui 8: Add, Edit, x659 y386 w70 h30  vDISPLAYNOCHAT , %DISPLAYNOCHAT%
+Gui 8: Add, Text, x519 y426 w130 h30 , Enable Debug
+Gui 8: Add, Edit, x659 y426 w70 h30 vENABLE_DEBUG , %ENABLE_DEBUG_HELP%
+Gui 8: Add, Text, x519 y466 w130 h30 , Filter No Match
+Gui 8: Add, Edit, x659 y466 w70 h30 vFILTERNOMATCH , %FILTERNOMATCH%
+Gui 8: Add, Text, x519 y506 w130 h30 , Max List View
+Gui 8: Add, Edit, x659 y506 w70 h30 vMAXLISTVIEW , %MAXLISTVIEW%
+Gui 8: Add, Text, x519 y546 w130 h30 , Search Drive
+Gui 8: Add, Edit, x659 y546 w70 h30 vSEARCHDRIVE , %SEARCHDRIVE%
+
+Gui 8: Add, Text, x769 y66 w130 h30 , Stocks
+Gui 8: Add, Edit, x909 y66 w70 h30 vSHOWSTOCKS ,  %SHOWSTOCKS%
+Gui 8: Add, Text, x769 y106 w130 h30 , Workers
+Gui 8: Add, Edit, x909 y106 w70 h30 vSHOWWORKERS , %SHOWWORKERS%
+Gui 8: Add, Text, x769 y146 w130 h30 , Murders
+Gui 8: Add, Edit, x909 y146 w70 h30 vSHOWMURDERS , %SHOWMURDERS%
+Gui 8: Add, Text, x769 y186 w130 h30 , Death
+Gui 8: Add, Edit, x909 y186 w70 h30 vSHOWDEATHS , %SHOWDEATHS%
+Gui 8: Add, Text, x769 y226 w130 h30 , Arrested
+Gui 8: Add, Edit, x909 y226 w70 h30 vSHOWARRESTED , %SHOWARRESTED%
+Gui 8: Add, Text, x769 y266 w130 h30 , Joiners
+Gui 8: Add, Edit, x909 y266 w70 h30 vSHOWJOINERS , %SHOWJOINERS%
+Gui 8: Add, Text, x769 y306 w130 h30 , Quitters
+Gui 8: Add, Edit, x909 y306 w70 h30 vSHOWQUITERS , %SHOWQUITERS%
+Gui 8: Add, Text, x769 y346 w130 h30 , Fish
+Gui 8: Add, Edit, x909 y346 w70 h30 vSHOWFISH , %SHOWFISH%
+;Gui 8: Add, Text, x769 y386 w130 h30 , Text
+;Gui 8: Add, Edit, x909 y386 w70 h30 , Edit
+;Gui 8: Add, Text, x769 y426 w130 h30 , Text
+;Gui 8: Add, Edit, x909 y426 w70 h30 , Edit
+;Gui 8: Add, Text, x769 y466 w130 h30 , Text
+;Gui 8: Add, Edit, x909 y466 w70 h30 , Edit
+;Gui 8: Add, Text, x769 y506 w130 h30 , Text
+;Gui 8: Add, Edit, x909 y506 w70 h30 , Edit
+;Gui 8: Add, Text, x769 y546 w130 h30 , Text
+;Gui 8: Add, Edit, x909 y546 w70 h30 , Edit
+Gui 8: Add, Text, x1009 y66 w130 h30 , Sleep Line Count
+Gui 8: Add, Edit, x1149 y66 w70 h30 vSLEEPLINECOUNT , %SLEEPLINECOUNT%
+Gui 8: Add, Text, x1009 y106 w130 h30 , Sleep Log Size
+Gui 8: Add, Edit, x1149 y106 w70 h30 vSLEEPLOGSIZE , %SLEEPLOGSIZE%
+Gui 8: Add, Text, x1009 y146 w130 h30 , Sleep To Slow
+Gui 8: Add, Edit, x1149 y146 w70 h30 vSLEEPTOSLOW , %SLEEPTOSLOW%
+Gui 8: Add, Text, x1009 y186 w130 h30 , Sleep To Wake
+Gui 8: Add, Edit, x1149 y186 w70 h30 vSLEEPTOWAKE , %SLEEPTOWAKE%
+Gui 8: Add, Text, x1009 y226 w130 h30 , Sleep To Kill
+Gui 8: Add, Edit, x1149 y226 w70 h30 vSLEEPKILLMULTI , %SLEEPKILLMULTI%
+Gui 8: Add, Text, x1009 y266 w130 h30 , Sleep To Detect
+Gui 8: Add, Edit, x1149 y266 w70 h30 vSLEEPDETECT , %SLEEPDETECT%
+Gui 8: Add, Text, x1009 y306 w130 h30 , Sleep To Log
+Gui 8: Add, Edit, x1149 y306 w70 h30 vSLEEPTOLOG , %SLEEPTOLOG%
+Gui 8: Add, Text, x1009 y346 w130 h30 , Sleep to Ignore
+Gui 8: Add, Edit, x1149 y346 w70 h30 vSLEEPIGNORE , %SLEEPIGNORE%
+Gui 8: Add, Text, x1009 y386 w130 h30 , Lv_Modifycol
+Gui 8: Add, Edit, x1149 y386 w70 h30 vLV_MODIFYCOL , %LV_MODIFYCOL%
+Gui 8: Add, Text, x1009 y426 w130 h30 , Keybind Check
+Gui 8: Add, Edit, x1149 y426 w70 h30 vKEYBINDCHECK , %KEYBINDCHECK%
+Gui 8: Add, Text, x1009 y466 w130 h30 , Read Log
+Gui 8: Add, Edit, x1149 y466 w70 h30 vREADLOG , %READLOG%
+Gui 8: Add, Text, x1009 y506 w130 h30 , Scroll Rate
+Gui 8: Add, Edit, x1149 y506 w70 h30 vSCROLLRATE , %SCROLLRATE%
+;Gui 8: Add, Text, x1009 y546 w130 h30 , Text
+;Gui 8: Add, Edit, x1149 y546 w70 h30 , Edit
+Gui 8: Add, Text, x769 y16 w190 h30 , Show Results
+Gui 8: Add, Text, x1009 y16 w190 h30 , Performance
+Gui 8: Show, w1277 h625, Debuging
+return
+
+Automation:
+Gui 9: Add, CheckBox, x40 y30   w280 h40 vAUTOLOGONON  			Checked%AUTOLOGONON%		, Login 
+Gui 9: Add, CheckBox, x40 y70   w280 h40 vAUTOTRUCKING  		Checked%vAUTOTRUCKING%		, Display Trucking Menu
+Gui 9: Add, CheckBox, x40 y110  w280 h40 vAUTOGPSMISSION 		Checked%AUTOGPSMISSION%		, Truck Delivery GPS
+Gui 9: Add, CheckBox, x40 y150  w280 h40 vAUTOGPSCARSELL  		Checked%AUTOGPSCARSELL%		, GPS to Crane
+Gui 9: Add, CheckBox, x40 y190  w280 h40 vAUTTOACCEPTOFFER   	Checked%AUTTOACCEPTOFFER%	, View Vendor Inventory
+Gui 9: Add, CheckBox, x40 y230  w280 h40 vAUTOHOUSEON   		Checked%AUTOHOUSEON%		, View House Menu
+Gui 9: Add, CheckBox, x40 y270  w280 h40 vAUTOHOUSESTOREON   	Checked%AUTOHOUSESTOREON%	, View House Storage
+Gui 9: Add, CheckBox, x40 y310  w280 h40 vAUTOJURYON   			Checked%AUTOJURYON%			, View Jury Duty
+Gui 9: Add, CheckBox, x40 y350  w280 h40 vAUTOBONUSON   		Checked%AUTOBONUSON%		, View Bonuses
+Gui 9: Add, CheckBox, x40 y390  w280 h40 vAUTODRUGSON   		Checked%AUTODRUGSON%		, Use Drugs While Fishing
+Gui 9: Add, CheckBox, x40 y430  w280 h40 vAUTOTICKETON   		Checked%AUTOTICKETON%		, Pay Ticket
+Gui 9: Add, CheckBox, x40 y470  w280 h40 vAUTOLOTTOON  			Checked%AUTOLOTTOON%		, Play Lotto
+Gui 9: Add, CheckBox, x40 y510  w280 h40 vAUTOPLAYDICE   		Checked%AUTOPLAYDICE%		, Play Dice Repetitively
+Gui 9: Add, CheckBox, x320 y30  w280 h40 vAUTOPLAYASKEDICE   	Checked%AUTOPLAYASKEDICE%	, Play Dice When Asked
+Gui 9: Add, CheckBox, x320 y70  w280 h40 vAUTOFISHON   			Checked%AUTOFISHON%			, Auto Fishing
+Gui 9: Add, CheckBox, x320 y110 w280 h40 vAUTOTHROWON   		Checked%AUTOTHROWON%		, Auto Fish Throwback 
+Gui 9: Add, CheckBox, x320 y150 w280 h40 vAUTOFISHSHOW  		Checked%AUTOFISHSHOW%		, Auto Fish Sell Menu
+Gui 9: Add, CheckBox, x320 y190 w280 h40 vAUTOFISHSELL 			Checked%AUTOFISHSELL%		, Auto Sell All Fish
+Gui 9: Add, CheckBox, x320 y230 w280 h40 vAUTOCNRRADIO  		Checked%AUTOCNRRADIO%		, Listen to CnR Radio
+Gui 9: Add, CheckBox, x320 y270 w280 h40 vAUTOFOODMISSION  		Checked%AUTOFOODMISSION%	, Start Food Mission
+Gui 9: Add, CheckBox, x320 y310 w280 h40 vAUTOTRASHMISSION  	Checked%AUTOTRASHMISSION%	, Start Trash Mission
+Gui 9: Add, CheckBox, x320 y350 w280 h40 vAUTOOFFERTOWAVER  	Checked%AUTOOFFERTOWAVER%	, Auto Offer Items
+Gui 9: Add, CheckBox, x320 y390 w280 h40 vAUTOFISHDISPLAY   	Checked%AUTOFISHDISPLAY%	, Display Fish Menu
+Gui 9: Add, CheckBox, x320 y430 w280 h40 vAUTOCOLORON  			Checked%AUTOCOLORON%		, Auto Car Coloring
+
+Gui 9: Add, GroupBox, x9 y6 w600 h580 , Enable/Disable
+Gui 9: Show, , Fishlog Automation
+return
+
+Statistics:
+Gui 10: Add, CheckBox, x50 y50  w180 h40  vSHOWSTOCKS Checked%SHOWSTOCKS%, Stocks
+Gui 10: Add, CheckBox, x50 y90  w180 h40  vSHOWWORKERS Checked%SHOWWORKERS%, Workers
+Gui 10: Add, CheckBox, x50 y130 w180 h40 vSHOWMURDERS Checked%SHOWMURDERS%, Muders
+Gui 10: Add, CheckBox, x50 y170 w180 h40 vSHOWDEATHS Checked%SHOWDEATHS%, Deaths
+Gui 10: Add, CheckBox, x50 y210 w180 h40 vSHOWARRESTED Checked%SHOWARRESTED%, Arested
+Gui 10: Add, CheckBox, x50 y250 w180 h40 vSHOWJOINERS Checked%SHOWJOINERS%, Joiners
+Gui 10: Add, CheckBox, x50 y290 w180 h40 vSHOWQUITERS Checked%SHOWQUITERS%, Quitters
+Gui 10: Add, CheckBox, x50 y330 w180 h40 vSHOWFISH Checked%SHOWFISH%, Fish
+Gui 10: Add, GroupBox, x19 y30  w220 h350 v , Show Stats (Experimental)
+Gui 10: Show, w286 h425, Stats
+return
+
+8GuiClose:
+LV_Add("","- " A_ThisLabel)
+	gui 8:submit
+	gosub INIWRITE
+	gui 8:destroy
+return
+
+9GuiClose:
+LV_Add("","- " A_ThisLabel)
+	gui 9:submit
+	gosub INIWRITE
+	gui 9:destroy
+return
+10GuiClose:
+LV_Add("","- " A_ThisLabel)
+	gui 10:submit
+	gosub INIWRITE
+	gui 10:destroy
+return
+
 
 READLOG:
 IfWinNotActive ,GTA:SA:MP
@@ -8718,253 +9194,7 @@ return
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; GUI ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 
-Logon:
-	if ENABLE_DEBUG = 1
-			LV_Add("", "- " A_ThisLabel)
-	gosub getpass
-	Gui 2:Margin, 5,5
-	Gui 2:Font, S10, Verdana
-	Gui 2:Add, Groupbox,	x5 	y0 	w230 h80, Enter User Name
-	Gui 2:Add, Groupbox, 	x5 	y80 w230 h80, Enter Password
-	Gui 2:Add, Edit, 		x20 y35 r1 Limit20 w200 h20 vPlayerName, %PlayerName%
-	Gui 2:Add, Edit, 		x20 y115 r1 Limit20 w200 h20 0x20 vmypass, %mypass%
-	Gui 2:Add, Button, 		x240 y10 w50 h150 0x8000 Default, OK
-	Gui 2:Show, AutoSize ,Logon
-Return
-
-Fishsize:
-	if ENABLE_DEBUG = 1
-			LV_Add("", "- "  A_ThisLabel)
-	gosub FISHREAD
-	Gui 3:Margin, 5,5
-	Gui 3:Add, Groupbox,w350 h420, Throwback Fish Under (LB)
-	Gui 3:Add, Text , x20 y40 h20  , Amberjack
-	Gui 3:Add, Text , x20 y60 h20 , Grouper
-	Gui 3:Add, Text , x20 y80 h20 , Red Snapper
-	Gui 3:Add, Text , x20 y100 h20 , Trout
-	Gui 3:Add, Text , x20 y120 h20 , Blue Marlin
-	Gui 3:Add, Text , x20 y140 h20 , Mackerel
-	Gui 3:Add, Text , x20 y160 h20 , Sea
-	Gui 3:Add, Text , x20 y180 h20 , Pike
-	Gui 3:Add, Text , x20 y200 h20 , Sail
-	Gui 3:Add, Text , x20 y220 h20 , Tuna
-	Gui 3:Add, Text , x20 y240 h20 , Eel
-	Gui 3:Add, Text , x20 y260 h20 , Dolphin
-	Gui 3:Add, Text , x20 y280 h20 , Shark
-	Gui 3:Add, Text , x20 y300 h20 , Turtle
-	Gui 3:Add, Text , x20 y320 h20 , Catfish
-	Gui 3:Add, Text , x20 y340 h20 , Swordfish
-	Gui 3:Add, Text , x20 y360 h20 , Squid
-	Gui 3:Add, Text , x20 y380 h20 , Barracuda
-	Gui 3:Add, Text , x200 y40 h20 , Piranha
-	Gui 3:Add, Text , x200 y60 h20 , Lobster
-	Gui 3:Add, Text , x200 y80 h20 , Cod
-	Gui 3:Add, Text , x200 y100 h20 , Sardine
-	Gui 3:Add, Text , x200 y120 h20 , Salmon
-	Gui 3:Add, Text , x200 y140 h20 , Shrimp
-	Gui 3:Add, Text , x200 y160 h20 , Sturgeon
-	Gui 3:Add, Text , x200 y180 h20 , Flounder
-	Gui 3:Add, Text , x200 y200 h20 , Haddock
-	Gui 3:Add, Text , x200 y220 h20 , Herring
-	Gui 3:Add, Text , x200 y240 h20 , Stingray
-	Gui 3:Add, Text , x200 y260 h20 , Carp
-	Gui 3:Add, Text , x200 y280 h20 , Halibut
-	Gui 3:Add, Text , x200 y300 h20 , Sole
-	Gui 3:Add, Text , x200 y320 h20 , Baby Seal
-	GUI 3:Add, Edit , x120 y40 w60  h20 vAmberjack ,%Amberjack%
-	GUI 3:Add, Edit , x120 y60 w60  h20 vGrouper,%Grouper%
-	GUI 3:Add, Edit , x120 y80 w60  h20 vRed ,%Red%
-	GUI 3:Add, Edit , x120 y100 w60 h20 vTrout ,%Trout%
-	GUI 3:Add, Edit , x120 y120 w60 h20 vBlue ,%Blue%
-	GUI 3:Add, Edit , x120 y140 w60 h20 vMackerel ,%Mackerel%
-	GUI 3:Add, Edit , x120 y160 w60 h20 vSea ,%Sea%
-	GUI 3:Add, Edit , x120 y180 w60 h20 vPike,%Pike%
-	GUI 3:Add, Edit , x120 y200 w60 h20 vSail ,%Sail%
-	GUI 3:Add, Edit , x120 y220 w60 h20 vTuna ,%Tuna%
-	GUI 3:Add, Edit , x120 y240 w60 h20 vEel ,%Eel%
-	GUI 3:Add, Edit , x120 y260 w60 h20 vDolphin ,%Dolphin%
-	GUI 3:Add, Edit , x120 y280 w60 h20 vShark ,%Shark%
-	GUI 3:Add, Edit , x120 y300 w60 h20 vTurtle ,%Turtle%
-	GUI 3:Add, Edit , x120 y320 w60 h20 vCatfish ,%Catfish%
-	GUI 3:Add, Edit , x120 y340 w60 h20 vSwordfish ,%Swordfish%
-	GUI 3:Add, Edit , x120 y360 w60 h20 vSquid ,%Squid%
-	GUI 3:Add, Edit , x120 y380 w60 h20 vBarracuda ,%Barracuda%
-	GUI 3:Add, Edit , x280 y40 w60  h20 vPiranha ,%Piranha%
-	GUI 3:Add, Edit , x280 y60 w60  h20 vLobster ,%Lobster%
-	GUI 3:Add, Edit , x280 y80 w60  h20 vCod ,%Cod%
-	GUI 3:Add, Edit , x280 y100 w60 h20 vSardine ,%Sardine%
-	GUI 3:Add, Edit , x280 y120 w60 h20 vSalmon ,%Salmon%
-	GUI 3:Add, Edit , x280 y140 w60 h20 vShrimp ,%Shrimp%
-	GUI 3:Add, Edit , x280 y160 w60 h20 vSturgeon ,%Sturgeon%
-	GUI 3:Add, Edit , x280 y180 w60 h20 vFlounder ,%Flounder%
-	GUI 3:Add, Edit , x280 y200 w60 h20 vHaddock ,%Haddock%
-	GUI 3:Add, Edit , x280 y220 w60 h20 vHerring ,%Herring%
-	GUI 3:Add, Edit , x280 y240 w60 h20 vStingray ,%Stingray%
-	GUI 3:Add, Edit , x280 y260 w60 h20 vCarp ,%Carp%
-	GUI 3:Add, Edit , x280 y280 w60 h20 vHalibut ,%Halibut%
-	GUI 3:Add, Edit , x280 y300 w60 h20 vSole ,%Sole%
-	GUI 3:Add, Edit , x280 y320 w60 h20 vBabyseal ,%Babyseal%	
-	GUI 3:Add, Edit , x280 y380 w60 h20 vDelay ,  %Delay%
-	Gui 3:Add, Text , x200 y380     h20        , Delay
-	Gui 3:Add, Checkbox , x380 y290     h20	vAUTOFISHDISPLAY Checked%AUTOFISHDISPLAY%, Show Catch
-	Gui 3:Add, Groupbox , x370 y35 h240 w130  	  , Keep Fish
-	Gui 3:Add, Button , x380 y70  w100 , All
-	Gui 3:Add, Button , x380 y110 w100 , Small
-	Gui 3:Add, Button , x380 y150 w100 , Medium
-	Gui 3:Add, Button , x380 y190 w100 , Large
-	Gui 3:Add, Button , x380 y230 w100 , Huge
-	Gui 3:Add, Button , x380 y340 w100 h60 , Apply
-	Gui 3:Show, AutoSize ,Fish
-	
-
-Return
-Preferences:
-	if ENABLE_DEBUG = 1
-		LV_Add("", "-  "  A_ThisLabel)
-	gosub INIREAD
-	Gui 4:Margin, 10,5
-	Gui 4:Add, GroupBox, x20  y5 w150 h120 						, Auto Lotto
-	Gui 4:Add, Text, 	 x30  y30 w130  						, Prefered Number
-	Gui 4:Add, Text, 	 x30  y50 w130  						, 0 is Random
-	Gui 4:Add, Edit, 	 x30  y80 w30  vGUILOTTO				, %GUILOTTO%
-	
-	Gui 4:Add, GroupBox, x20  y135 w150 h120 					, Take Drugs 
-	Gui 4:Add, Text, 	 x30  y160 w130  						, Use Amount
-	Gui 4:Add, Text, 	 x30  y180 w130  						, On Keybind
-	Gui 4:Add, Edit, 	 x30  y205 w30  vTAKEDRUGSAMOUNT		, %TAKEDRUGSAMOUNT%
-	
-	Gui 4:Add, GroupBox, x20  y265 w150 h120 					, Not Used 
-	Gui 4:Add, Text, 	 x30  y290 w130  						, Not Used
-	Gui 4:Add, Text, 	 x30  y310 w130  						, Not Used
-	Gui 4:Add, Edit, 	 x30  y335 w30  						, 
-	
-	Gui 4:Add, GroupBox, 	x170 y5  w300 h120 					, Vehicle Color
-	Gui 4:Add, Text, 	 	x190 y30 w60  h20 					, Color 1
-	Gui 4:Add, ComboBox,	x260 y30 w190 r8 vCOLOR1 			, %COLOR1%||%COLORLIST%
-	Gui 4:Add, Text, 	 	x190 y70 w60  h20 					, Color 2
-	Gui 4:Add, ComboBox, 	x260 y70 w190 r8 vCOLOR2 			, %COLOR2%||%COLORLIST%
-	
-	Gui 4:Add, GroupBox, 	x170 y135 w300 h120 				, Others
-	gui 4:Add, Text, 		x190 y160 w140 h30 					, Bribe Amount
-	gui 4:Add, Edit, 		x300 y160 w100 h20 vBRIBEAMOUNT 	, %BRIBEAMOUNT%
-	gui 4:Add, Text, 		x190 y200 w140 h30 					, Dice Amount
-	gui 4:Add, Edit, 		x300 y200 w100 h20  vPLAYDICEAMOUNT	, %PLAYDICEAMOUNT%
-	
-
-	Gui 4:Add, GroupBox,	x470  y5 w300 h120 					, Server Addresses
-	gui 4:Add, Text,	 	x490 y30 w140 h30 					, Server 1 IP
-	gui 4:Add, Edit, 	 	x590 y30 w150 h20 vSERVER1 			, %SERVER1%
-	gui 4:Add, Text,	 	x490 y70 w140 h30 					, Server 2 IP
-	gui 4:Add, Edit,	 	x590 y70 w150 h20 vSERVER2			, %SERVER2%
-	
-	Gui 4:Add, GroupBox, 	x470 y135 w300 h120 				, Frame Rates
-	gui 4:Add, Text, 		x490 y160 w140 h30 					, FPS Lower Limit
-	gui 4:Add, Edit, 		x650 y160 w50 h20 vFPSLOW			, %FPSLOW%
-	gui 4:Add, Text, 		x490 y200 w140 h30 					, FPS Upper Limit
-	gui 4:Add, Edit, 		x650 y200 w50 h20 vFPSHIGH			, %FPSHIGH%
-
-	
-	TAKEDRUGSAMOUNT = 25
-	
-	gui 4:Add, Button, 		x660 y350 w100 h50 , Apply
-	
-	
-	
-	
-	;gui 4:Add, Text, x530 y230 w140 h40 , 												Chat Font Size
-	;gui 4:Add, Edit, x650 y230 w150 h20 vGUIFONT, %GUIFONT%
-	Gui 4:Show, AutoSize ,Preferences
-Return
-Keybinds:
-	if ENABLE_DEBUG = 1
-			LV_Add("", "-  " A_ThisLabel)
-	gosub INIREAD
-	gui 5:Add, Text, x20 y20 w600 h20 , Keybinder                             EXAMPLE   T/FishSlap{enter}                                    Enable
-	gui 5:Add, Text, x12 y60 w30 h20 , F1
-	gui 5:Add, Text, x12 y80 w30 h20 , F2
-	gui 5:Add, Text, x12 y100 w30 h20 , F3
-	gui 5:Add, Text, x12 y120 w30 h20 , F4
-	gui 5:Add, Text, x12 y140 w30 h20 , F5
-	gui 5:Add, Text, x12 y160 w30 h20 , F6
-	gui 5:Add, Text, x12 y180 w30 h20 , F7
-	gui 5:Add, Text, x12 y200 w30 h20 , F8
-	gui 5:Add, Text, x12 y220 w30 h20 , F9
-	gui 5:Add, Text, x12 y240 w30 h20 , F10
-	gui 5:Add, Text, x12 y260 w30 h20 , F11
-	gui 5:Add, Text, x12 y280 w30 h20 , F12
-	gui 5:Add, Edit, x42 y60 w370 h20  vF1 , %F1%
-	gui 5:Add, Edit, x42 y80 w370 h20  vF2, %F2%
-	gui 5:Add, Edit, x42 y100 w370 h20 vF3, %F3%
-	gui 5:Add, Edit, x42 y120 w370 h20 vF4, %F4%
-	gui 5:Add, Edit, x42 y140 w370 h20 vF5, %F5%
-	gui 5:Add, Edit, x42 y160 w370 h20 vF6, %F6%
-	gui 5:Add, Edit, x42 y180 w370 h20 vF7, %F7%
-	gui 5:Add, Edit, x42 y200 w370 h20 vF8, %F8%
-	gui 5:Add, Edit, x42 y220 w370 h20 vF9, %F9%
-	gui 5:Add, Edit, x42 y240 w370 h20 vF10, %F10%
-	gui 5:Add, Edit, x42 y260 w370 h20 vF11, %F11%
-	gui 5:Add, Edit, x42 y280 w370 h20 vF12, %F12%
-	gui 5:Add, CheckBox, x422 y60 w50 h20  VF1E  Checked%F1E%, 
-	gui 5:Add, CheckBox, x422 y80 w50 h20  VF2E  Checked%F2E%, 
-	gui 5:Add, CheckBox, x422 y100 w50 h20 VF3E  Checked%F3E%, 
-	gui 5:Add, CheckBox, x422 y120 w50 h20 VF4E  Checked%F4E%, 
-	gui 5:Add, CheckBox, x422 y140 w50 h20 VF5E  Checked%F5E%, 
-	gui 5:Add, CheckBox, x422 y160 w50 h20 VF6E  Checked%F6E%, 
-	gui 5:Add, CheckBox, x422 y180 w50 h20 VF7E  Checked%F7E%, 
-	gui 5:Add, CheckBox, x422 y200 w50 h20 VF8E  Checked%F8E%, 
-	gui 5:Add, CheckBox, x422 y220 w50 h20 VF9E  Checked%F9E%, 
-	gui 5:Add, CheckBox, x422 y240 w50 h20 VF10E Checked%F10E%, 
-	gui 5:Add, CheckBox, x422 y260 w50 h20 VF11E Checked%F11E%, 
-	gui 5:Add, CheckBox, x422 y280 w50 h20 VF12E Checked%F12E%, 
-	gui 5:Add, Text, x20 y20 w600 h20 , Keybinder                             EXAMPLE   T/FishSlap{enter}                                    Enable
-	gui 5:Add, Text, x500 y60 w30 h20 , 1
-	gui 5:Add, Text, x500 y80 w30 h20 , 2
-	gui 5:Add, Text, x500 y100 w30 h20 , 3
-	gui 5:Add, Text, x500 y120 w30 h20 , 4
-	gui 5:Add, Text, x500 y140 w30 h20 , 5
-	gui 5:Add, Text, x500 y160 w30 h20 , 6
-	gui 5:Add, Text, x500 y180 w30 h20 , 7
-	gui 5:Add, Text, x500 y200 w30 h20 , 8
-	gui 5:Add, Text, x500 y220 w30 h20 , 9
-	gui 5:Add, Text, x500 y240 w30 h20 , 0
-	gui 5:Add, Text, x500 y260 w30 h20 , -
-	gui 5:Add, Text, x500 y280 w30 h20 , =
-	gui 5:Add, Edit, x520 y60 w370 h20  vBIND1 ,%BIND1%
-	gui 5:Add, Edit, x520 y80 w370 h20  vBIND2, %BIND2%
-	gui 5:Add, Edit, x520 y100 w370 h20 vBIND3, %BIND3%
-	gui 5:Add, Edit, x520 y120 w370 h20 vBIND4, %BIND4%
-	gui 5:Add, Edit, x520 y140 w370 h20 vBIND5, %BIND5%
-	gui 5:Add, Edit, x520 y160 w370 h20 vBIND6, %BIND6%
-	gui 5:Add, Edit, x520 y180 w370 h20 vBIND7, %BIND7%
-	gui 5:Add, Edit, x520 y200 w370 h20 vBIND8, %BIND8%
-	gui 5:Add, Edit, x520 y220 w370 h20 vBIND9, %BIND9%
-	gui 5:Add, Edit, x520 y240 w370 h20 vBIND10, %BIND10%
-	gui 5:Add, Edit, x520 y260 w370 h20 vBIND11, %BIND11%
-	gui 5:Add, Edit, x520 y280 w370 h20 vBIND12, %BIND12%
-	gui 5:Add, CheckBox, x900 y60 w50 h20  vBIND1E  Checked%BIND1E%, 
-	gui 5:Add, CheckBox, x900 y80 w50 h20  vBIND2E  Checked%BIND2E%, 
-	gui 5:Add, CheckBox, x900 y100 w50 h20 vBIND3E  Checked%BIND3E%, 
-	gui 5:Add, CheckBox, x900 y120 w50 h20 vBIND4E  Checked%BIND4E%, 
-	gui 5:Add, CheckBox, x900 y140 w50 h20 vBIND5E  Checked%BIND5E%, 
-	gui 5:Add, CheckBox, x900 y160 w50 h20 vBIND6E  Checked%BIND6E%, 
-	gui 5:Add, CheckBox, x900 y180 w50 h20 vBIND7E  Checked%BIND7E%, 
-	gui 5:Add, CheckBox, x900 y200 w50 h20 vBIND8E  Checked%BIND8E%, 
-	gui 5:Add, CheckBox, x900 y220 w50 h20 vBIND9E  Checked%BIND9E%, 
-	gui 5:Add, CheckBox, x900 y240 w50 h20 vBIND10E Checked%BIND10E%, 
-	gui 5:Add, CheckBox, x900 y260 w50 h20 vBIND11E Checked%BIND11E%, 
-	gui 5:Add, CheckBox, x900 y280 w50 h20 vBIND12E Checked%BIND12E%, 	
-	
-	gui 5:Add, GroupBox, x40  y325 w220 h235 w250 , Enable/Disable Keybinds
-	gui 5:Add, CheckBox, x60  y350 w220 h20 vKEYPROGRAMON Checked%KEYPROGRAMON%, Programable
-	gui 5:Add, CheckBox, x60  y380 w220 h20 vKEYANIMATIONON Checked%KEYANIMATIONON%, Preset Game Commands
-	gui 5:Add, CheckBox, x60  y410 w220 h20 vKEYSKILLON Checked%KEYSKILLON%, Preset Item Purchase 
-	gui 5:Add, CheckBox, x60  y440 w220 h20 vKEYMENUON Checked%KEYMENUON%, Preset Menu Binds
-	gui 5:Add, CheckBox, x60  y470 w220 h20 vKEYFPSON Checked%KEYFPSON%, ALT+TAB Toggle FPS
-	gui 5:Add, CheckBox, x60  y500 w220 h20 vKEYWINKEY Checked%KEYWINKEY%, LWIN Sit 8
-	gui 5:Add, CheckBox, x60  y530 w220 h20 vKEYDLTOGGLE Checked%KEYDLTOGGLE%, CAPSLOCK Toggles DL
-	Gui 5:Add, Button, Default, Apply
-	gui 5:Show, , Keybinds
-return
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; GUI BUTTON FUNTIONS ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 2buttonOk:
 LV_Add("", "-  " A_ThisLabel)
@@ -9042,6 +9272,7 @@ LV_Add("", "-  "  A_ThisLabel)
 	gui 6:destroy
 	reload
 return
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; GUI CLOSE ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 GuiClose:
 LV_Add("", "-  "  A_ThisLabel)
 	WinGetPos , X, Y, Width, Height,
@@ -9087,6 +9318,9 @@ LV_Add("","- " A_ThisLabel)
 	gosub INIREAD
 	gui 6:destroy
 return
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; GUI TOOLBAR FUCNTIONS ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 Home:
 LV_Add("", "-  "  A_ThisLabel)
 	run http://crazybobs.net/website/
@@ -9149,7 +9383,7 @@ else
 SetWorkingDir ,%logdir%
 LV_Add("", logfile)
 return
-
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; GUI AUTOMATION ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 GuiSize:
 if ENABLE_DEBUG = 1
 	LV_Add("", "-  "  A_ThisLabel " = " A_GuiWidth " X " A_GuiHeight)
@@ -9771,233 +10005,7 @@ makehistory:
 ;}
 return
 
-Files:
-Gui 7:  Add, Text,		x10  y10  w200 h40 , File Locations
-gui 7:  Add, CheckBox, 	x30  y40  w200 h40 vOUTPUTJOURNALON Checked%OUTPUTJOURNALON%,				Output history
-Gui 7:  Add, Text,     	x30  y100 w100 h30 , Log Location
-Gui 7:  Add, Edit, 		x140 y100 w600 h30 vCHATLOG , %logfile%
-Gui 7:  Add, Text, 		x30  y140 w100 h30 , Log to Dir
-Gui 7:  Add, Edit,		x140 y140 w600 h30 vlogdir , %logdir%
-Gui 7:  Add, Text, 		x30  y180 w100 h30 , History
-Gui 7:  Add, Edit, 		x140 y180 w600 h30 vhistory , %history%
-Gui 7:  Add, Text, 		x30  y220 w100 h30 , Whitelist
-Gui 7:  Add, Edit, 		x140 y220 w600 h30 vwhitelist , %whitelist%
-Gui 7:  Add, Text, 		x30  y260 w100 h30 , Blacklist
-Gui 7:  Add, Edit, 		x140 y260 w600 h30 vblacklist , %blacklist%
-;Gui 7:  Add, Text, x29 y2306 w100 h30 , logfile
-;Gui 7:  Add, Edit, x139 y306 w600 h30 , Edit
-;Gui 7:  Add, Button, x319 y356 w90 h30 , Defaults
-;Gui 7:  Add, Button, x439 y356 w90 h30 , Apply
-Gui 7:  Show, w800 h340
-return
 
-7GuiClose:
-LV_Add("","- " A_ThisLabel)
-	gui 7:submit
-	gosub INIWRITE
-	gui 7:destroy
-return
-Debug:
-Gui 8: Add, Text, x19 y16 w190 h30 , Debug
-Gui 8: Add, Text, x19 y66 w130 h30 , No Match
-Gui 8: Add, Edit, x159 y66 w70 h30 vENABLE_DEBUG_NOMATCH , %ENABLE_DEBUG_NOMATCH%
-Gui 8: Add, Text, x19 y106 w130 h30 , Fish
-Gui 8: Add, Edit, x159 y106 w70 h30 vENABLE_DEBUG_FISH , %ENABLE_DEBUG_FISH%
-Gui 8: Add, Text, x19 y146 w130 h30 , Dead
-Gui 8: Add, Edit, x159 y146 w70 h30 vENABLE_DEBUG_DEAD , %ENABLE_DEBUG_DEAD%
-Gui 8: Add, Text, x19 y186 w130 h30 , Money
-Gui 8: Add, Edit, x159 y186 w70 h30 vENABLE_DEBUG_MONEY , %ENABLE_DEBUG_MONEY%
-Gui 8: Add, Text, x19 y226 w130 h30 , GPS
-Gui 8: Add, Edit, x159 y226 w70 h30 vENABLE_DEBUG_GPS , %ENABLE_DEBUG_GPS%
-Gui 8: Add, Text, x19 y266 w130 h30 , Help
-Gui 8: Add, Edit, x159 y266 w70 h30 vENABLE_DEBUG_HELP , %ENABLE_DEBUG_HELP%
-Gui 8: Add, Text, x19 y306 w130 h30 , Jury
-Gui 8: Add, Edit, x159 y306 w70 h30 vENABLE_DEBUG_JURY , %ENABLE_DEBUG_JURY%
-Gui 8: Add, Text, x19 y346 w130 h30 , Lotto
-Gui 8: Add, Edit, x159 y346 w70 h30 vENABLE_DEBUG_LOTTO , %ENABLE_DEBUG_LOTTO%
-Gui 8: Add, Text, x19 y386 w130 h30 , Time
-;Gui 8: Add, Edit, x159 y386 w70 h30 vENABLE_DEBUG_TIME , %ENABLE_DEBUG_TIME%
-Gui 8: Add, Text, x19 y426 w130 h30 , Crime
-Gui 8: Add, Edit, x159 y426 w70 h30 vENABLE_DEBUG_CRIME , %ENABLE_DEBUG_CRIME%
-Gui 8: Add, Text, x19 y466 w130 h30 , Work
-Gui 8: Add, Edit, x159 y466 w70 h30 vENABLE_DEBUG_WORK , %ENABLE_DEBUG_WORK%
-Gui 8: Add, Text, x19 y506 w130 h30 , Stock
-Gui 8: Add, Edit, x159 y506 w70 h30 vENABLE_DEBUG_STOCK , %ENABLE_DEBUG_STOCK%
-Gui 8: Add, Text, x19 y546 w130 h30 , PM
-Gui 8: Add, Edit, x159 y546 w70 h30 vENABLE_DEBUG_PM , %ENABLE_DEBUG_PM%
-Gui 8: Add, Text, x269 y66 w130 h30 , MSG
-Gui 8: Add, Edit, x409 y66 w70 h30 vENABLE_DEBUG_MSG , %ENABLE_DEBUG_MSG%
-Gui 8: Add, Text, x269 y106 w130 h30 , Dice
-Gui 8: Add, Edit, x409 y106 w70 h30 vENABLE_DEBUG_DICE , %ENABLE_DEBUG_DICE%
-Gui 8: Add, Text, x269 y146 w130 h30 , Time Stats
-Gui 8: Add, Edit, x409 y146 w70 h30 vENABLE_DEBUG_TIMESTAT , %ENABLE_DEBUG_TIMESTAT% 
-Gui 8: Add, Text, x269 y186 w130 h30 , Flower
-Gui 8: Add, Edit, x409 y186 w70 h30 vENABLE_DEBUG_FLOWER , %ENABLE_DEBUG_FLOWER% 
-Gui 8: Add, Text, x269 y226 w130 h30 , Server
-Gui 8: Add, Edit, x409 y226 w70 h30 vENABLE_DEBUG_SERVER , %ENABLE_DEBUG_SERVER% 
-Gui 8: Add, Text, x269 y266 w130 h30 , Bonus
-Gui 8: Add, Edit, x409 y266 w70 h30 vENABLE_DEBUG_BONUS , %ENABLE_DEBUG_BONUS% 
-Gui 8: Add, Text, x269 y306 w130 h30 , Whisper
-Gui 8: Add, Edit, x409 y306 w70 h30 vENABLE_DEBUG_WHISPER , %ENABLE_DEBUG_WHISPER% 
-Gui 8: Add, Text, x269 y346 w130 h30 , Dispatch
-Gui 8: Add, Edit, x409 y346 w70 h30 vENABLE_DEBUG_DISPATCH , %ENABLE_DEBUG_DISPATCH% 
-Gui 8: Add, Text, x269 y386 w130 h30 , Crime Report
-Gui 8: Add, Edit, x409 y386 w70 h30 vENABLE_DEBUG_CRIMEREPORT , %ENABLE_DEBUG_CRIMEREPORT% 
-Gui 8: Add, Text, x269 y426 w130 h30 , CnR
-Gui 8: Add, Edit, x409 y426 w70 h30 vENABLE_DEBUG_CNR , %ENABLE_DEBUG_CNR% 
-Gui 8: Add, Text, x269 y466 w130 h30 , House
-Gui 8: Add, Edit, x409 y466 w70 h30 vENABLE_DEBUG_HOUSE , %ENABLE_DEBUG_HOUSE% 
-Gui 8: Add, Text, x269 y506 w130 h30 , Vehicle
-Gui 8: Add, Edit, x409 y506 w70 h30 vENABLE_DEBUG_VEHICLE , %ENABLE_DEBUG_VEHICLE% 
-Gui 8: Add, Text, x269 y546 w130 h30 , Player
-Gui 8: Add, Edit, x409 y546 w70 h30 vENABLE_DEBUG_PLAYER , %ENABLE_DEBUG_PLAYER% 
-Gui 8: Add, Text, x519 y66 w130 h30 , Vendor
-Gui 8: Add, Edit, x659 y66 w70 h30 vENABLE_DEBUG_VENDOR ,  %ENABLE_DEBUG_VENDOR% 
-Gui 8: Add, Text, x519 y106 w130 h30 , Money Bag
-Gui 8: Add, Edit, x659 y106 w70 h30 vENABLE_DEBUG_MONEYBAG , %ENABLE_DEBUG_MONEYBAG% 
-Gui 8: Add, Text, x519 y146 w130 h30 , Birthdays
-Gui 8: Add, Edit, x659 y146 w70 h30 vENABLE_DEBUG_BDAYS , %ENABLE_DEBUG_BDAYS% 
-Gui 8: Add, Text, x519 y186 w130 h30 , Purchase
-Gui 8: Add, Edit, x659 y186 w70 h30 vENABLE_DEBUG_PURCHASE , %ENABLE_DEBUG_PURCHASE% 
-Gui 8: Add, Text, x519 y226 w130 h30 , Delivery
-Gui 8: Add, Edit, x659 y226 w70 h30 vENABLE_DEBUG_DELIVERY , %ENABLE_DEBUG_DELIVERY% 
-Gui 8: Add, Text, x519 y266 w130 h30 , Pet
-Gui 8: Add, Edit, x659 y266 w70 h30 vENABLE_DEBUG_PET , %ENABLE_DEBUG_PET% 
-Gui 8: Add, Text, x519 y306 w130 h30 , Driver
-Gui 8: Add, Edit, x659 y306 w70 h30 vENABLE_DEBUG_DRIVER , %ENABLE_DEBUG_DRIVER%
-Gui 8: Add, Text, x519 y346 w130 h30 , Welfare
-Gui 8: Add, Edit, x659 y346 w70 h30 vENABLE_DEBUG_WELFARE , %ENABLE_DEBUG_WELFARE%
-					
-Gui 8: Add, Text, x519 y386 w130 h30 , Disable Chat
-Gui 8: Add, Edit, x659 y386 w70 h30  vDISPLAYNOCHAT , %DISPLAYNOCHAT%
-Gui 8: Add, Text, x519 y426 w130 h30 , Enable Debug
-Gui 8: Add, Edit, x659 y426 w70 h30 vENABLE_DEBUG , %ENABLE_DEBUG_HELP%
-Gui 8: Add, Text, x519 y466 w130 h30 , Filter No Match
-Gui 8: Add, Edit, x659 y466 w70 h30 vFILTERNOMATCH , %FILTERNOMATCH%
-Gui 8: Add, Text, x519 y506 w130 h30 , Max List View
-Gui 8: Add, Edit, x659 y506 w70 h30 vMAXLISTVIEW , %MAXLISTVIEW%
-Gui 8: Add, Text, x519 y546 w130 h30 , Search Drive
-Gui 8: Add, Edit, x659 y546 w70 h30 vSEARCHDRIVE , %SEARCHDRIVE%
-
-Gui 8: Add, Text, x769 y66 w130 h30 , Stocks
-Gui 8: Add, Edit, x909 y66 w70 h30 vSHOWSTOCKS ,  %SHOWSTOCKS%
-Gui 8: Add, Text, x769 y106 w130 h30 , Workers
-Gui 8: Add, Edit, x909 y106 w70 h30 vSHOWWORKERS , %SHOWWORKERS%
-Gui 8: Add, Text, x769 y146 w130 h30 , Murders
-Gui 8: Add, Edit, x909 y146 w70 h30 vSHOWMURDERS , %SHOWMURDERS%
-Gui 8: Add, Text, x769 y186 w130 h30 , Death
-Gui 8: Add, Edit, x909 y186 w70 h30 vSHOWDEATHS , %SHOWDEATHS%
-Gui 8: Add, Text, x769 y226 w130 h30 , Arrested
-Gui 8: Add, Edit, x909 y226 w70 h30 vSHOWARRESTED , %SHOWARRESTED%
-Gui 8: Add, Text, x769 y266 w130 h30 , Joiners
-Gui 8: Add, Edit, x909 y266 w70 h30 vSHOWJOINERS , %SHOWJOINERS%
-Gui 8: Add, Text, x769 y306 w130 h30 , Quitters
-Gui 8: Add, Edit, x909 y306 w70 h30 vSHOWQUITERS , %SHOWQUITERS%
-Gui 8: Add, Text, x769 y346 w130 h30 , Fish
-Gui 8: Add, Edit, x909 y346 w70 h30 vSHOWFISH , %SHOWFISH%
-;Gui 8: Add, Text, x769 y386 w130 h30 , Text
-;Gui 8: Add, Edit, x909 y386 w70 h30 , Edit
-;Gui 8: Add, Text, x769 y426 w130 h30 , Text
-;Gui 8: Add, Edit, x909 y426 w70 h30 , Edit
-;Gui 8: Add, Text, x769 y466 w130 h30 , Text
-;Gui 8: Add, Edit, x909 y466 w70 h30 , Edit
-;Gui 8: Add, Text, x769 y506 w130 h30 , Text
-;Gui 8: Add, Edit, x909 y506 w70 h30 , Edit
-;Gui 8: Add, Text, x769 y546 w130 h30 , Text
-;Gui 8: Add, Edit, x909 y546 w70 h30 , Edit
-Gui 8: Add, Text, x1009 y66 w130 h30 , Sleep Line Count
-Gui 8: Add, Edit, x1149 y66 w70 h30 vSLEEPLINECOUNT , %SLEEPLINECOUNT%
-Gui 8: Add, Text, x1009 y106 w130 h30 , Sleep Log Size
-Gui 8: Add, Edit, x1149 y106 w70 h30 vSLEEPLOGSIZE , %SLEEPLOGSIZE%
-Gui 8: Add, Text, x1009 y146 w130 h30 , Sleep To Slow
-Gui 8: Add, Edit, x1149 y146 w70 h30 vSLEEPTOSLOW , %SLEEPTOSLOW%
-Gui 8: Add, Text, x1009 y186 w130 h30 , Sleep To Wake
-Gui 8: Add, Edit, x1149 y186 w70 h30 vSLEEPTOWAKE , %SLEEPTOWAKE%
-Gui 8: Add, Text, x1009 y226 w130 h30 , Sleep To Kill
-Gui 8: Add, Edit, x1149 y226 w70 h30 vSLEEPKILLMULTI , %SLEEPKILLMULTI%
-Gui 8: Add, Text, x1009 y266 w130 h30 , Sleep To Detect
-Gui 8: Add, Edit, x1149 y266 w70 h30 vSLEEPDETECT , %SLEEPDETECT%
-Gui 8: Add, Text, x1009 y306 w130 h30 , Sleep To Log
-Gui 8: Add, Edit, x1149 y306 w70 h30 vSLEEPTOLOG , %SLEEPTOLOG%
-Gui 8: Add, Text, x1009 y346 w130 h30 , Sleep to Ignore
-Gui 8: Add, Edit, x1149 y346 w70 h30 vSLEEPIGNORE , %SLEEPIGNORE%
-Gui 8: Add, Text, x1009 y386 w130 h30 , Lv_Modifycol
-Gui 8: Add, Edit, x1149 y386 w70 h30 vLV_MODIFYCOL , %LV_MODIFYCOL%
-Gui 8: Add, Text, x1009 y426 w130 h30 , Keybind Check
-Gui 8: Add, Edit, x1149 y426 w70 h30 vKEYBINDCHECK , %KEYBINDCHECK%
-Gui 8: Add, Text, x1009 y466 w130 h30 , Read Log
-Gui 8: Add, Edit, x1149 y466 w70 h30 vREADLOG , %READLOG%
-Gui 8: Add, Text, x1009 y506 w130 h30 , Scroll Rate
-Gui 8: Add, Edit, x1149 y506 w70 h30 vSCROLLRATE , %SCROLLRATE%
-;Gui 8: Add, Text, x1009 y546 w130 h30 , Text
-;Gui 8: Add, Edit, x1149 y546 w70 h30 , Edit
-Gui 8: Add, Text, x769 y16 w190 h30 , Show Results
-Gui 8: Add, Text, x1009 y16 w190 h30 , Performance
-Gui 8: Show, w1277 h625, Debuging
-return
-
-Automation:
-Gui 9: Add, CheckBox, x40 y30   w280 h40 vAUTOLOGONON  			Checked%AUTOLOGONON%		, Login 
-Gui 9: Add, CheckBox, x40 y70   w280 h40 vAUTOTRUCKING  		Checked%vAUTOTRUCKING%		, Display Trucking Menu
-Gui 9: Add, CheckBox, x40 y110  w280 h40 vAUTOGPSMISSION 		Checked%AUTOGPSMISSION%		, Truck Delivery GPS
-Gui 9: Add, CheckBox, x40 y150  w280 h40 vAUTOGPSCARSELL  		Checked%AUTOGPSCARSELL%		, GPS to Crane
-Gui 9: Add, CheckBox, x40 y190  w280 h40 vAUTTOACCEPTOFFER   	Checked%AUTTOACCEPTOFFER%	, View Vendor Inventory
-Gui 9: Add, CheckBox, x40 y230  w280 h40 vAUTOHOUSEON   		Checked%AUTOHOUSEON%		, View House Menu
-Gui 9: Add, CheckBox, x40 y270  w280 h40 vAUTOHOUSESTOREON   	Checked%AUTOHOUSESTOREON%	, View House Storage
-Gui 9: Add, CheckBox, x40 y310  w280 h40 vAUTOJURYON   			Checked%AUTOJURYON%			, View Jury Duty
-Gui 9: Add, CheckBox, x40 y350  w280 h40 vAUTOBONUSON   		Checked%AUTOBONUSON%		, View Bonuses
-Gui 9: Add, CheckBox, x40 y390  w280 h40 vAUTODRUGSON   		Checked%AUTODRUGSON%		, Use Drugs While Fishing
-Gui 9: Add, CheckBox, x40 y430  w280 h40 vAUTOTICKETON   		Checked%AUTOTICKETON%		, Pay Ticket
-Gui 9: Add, CheckBox, x40 y470  w280 h40 vAUTOLOTTOON  			Checked%AUTOLOTTOON%		, Play Lotto
-Gui 9: Add, CheckBox, x40 y510  w280 h40 vAUTOPLAYDICE   		Checked%AUTOPLAYDICE%		, Play Dice Repetitively
-Gui 9: Add, CheckBox, x320 y30  w280 h40 vAUTOPLAYASKEDICE   	Checked%AUTOPLAYASKEDICE%	, Play Dice When Asked
-Gui 9: Add, CheckBox, x320 y70  w280 h40 vAUTOFISHON   			Checked%AUTOFISHON%			, Auto Fishing
-Gui 9: Add, CheckBox, x320 y110 w280 h40 vAUTOTHROWON   		Checked%AUTOTHROWON%		, Auto Fish Throwback 
-Gui 9: Add, CheckBox, x320 y150 w280 h40 vAUTOFISHSHOW  		Checked%AUTOFISHSHOW%		, Auto Fish Sell Menu
-Gui 9: Add, CheckBox, x320 y190 w280 h40 vAUTOFISHSELL 			Checked%AUTOFISHSELL%		, Auto Sell All Fish
-Gui 9: Add, CheckBox, x320 y230 w280 h40 vAUTOCNRRADIO  		Checked%AUTOCNRRADIO%		, Listen to CnR Radio
-Gui 9: Add, CheckBox, x320 y270 w280 h40 vAUTOFOODMISSION  		Checked%AUTOFOODMISSION%	, Start Food Mission
-Gui 9: Add, CheckBox, x320 y310 w280 h40 vAUTOTRASHMISSION  	Checked%AUTOTRASHMISSION%	, Start Trash Mission
-Gui 9: Add, CheckBox, x320 y350 w280 h40 vAUTOOFFERTOWAVER  	Checked%AUTOOFFERTOWAVER%	, Auto Offer Items
-Gui 9: Add, CheckBox, x320 y390 w280 h40 vAUTOFISHDISPLAY   	Checked%AUTOFISHDISPLAY%	, Display Fish Menu
-Gui 9: Add, CheckBox, x320 y430 w280 h40 vAUTOCOLORON  			Checked%AUTOCOLORON%		, Auto Car Coloring
-
-Gui 9: Add, GroupBox, x9 y6 w600 h580 , Enable/Disable
-Gui 9: Show, , Fishlog Automation
-return
-
-Statistics:
-Gui 10: Add, CheckBox, x50 y50  w180 h40  vSHOWSTOCKS Checked%SHOWSTOCKS%, Stocks
-Gui 10: Add, CheckBox, x50 y90  w180 h40  vSHOWWORKERS Checked%SHOWWORKERS%, Workers
-Gui 10: Add, CheckBox, x50 y130 w180 h40 vSHOWMURDERS Checked%SHOWMURDERS%, Muders
-Gui 10: Add, CheckBox, x50 y170 w180 h40 vSHOWDEATHS Checked%SHOWDEATHS%, Deaths
-Gui 10: Add, CheckBox, x50 y210 w180 h40 vSHOWARRESTED Checked%SHOWARRESTED%, Arested
-Gui 10: Add, CheckBox, x50 y250 w180 h40 vSHOWJOINERS Checked%SHOWJOINERS%, Joiners
-Gui 10: Add, CheckBox, x50 y290 w180 h40 vSHOWQUITERS Checked%SHOWQUITERS%, Quitters
-Gui 10: Add, CheckBox, x50 y330 w180 h40 vSHOWFISH Checked%SHOWFISH%, Fish
-Gui 10: Add, GroupBox, x19 y30  w220 h350 v , Show Stats (Experimental)
-Gui 10: Show, w286 h425, Stats
-return
-
-8GuiClose:
-LV_Add("","- " A_ThisLabel)
-	gui 8:submit
-	gosub INIWRITE
-	gui 8:destroy
-return
-
-9GuiClose:
-LV_Add("","- " A_ThisLabel)
-	gui 9:submit
-	gosub INIWRITE
-	gui 9:destroy
-return
-10GuiClose:
-LV_Add("","- " A_ThisLabel)
-	gui 10:submit
-	gosub INIWRITE
-	gui 10:destroy
-return
 
 TIMESTATS:
 	if AUTOPLAYDICE = 1

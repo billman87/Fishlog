@@ -1,22 +1,81 @@
-;~ AutoTrim, On
+
+
+; Autohotkey Enviroment Settings
+AutoTrim, On
 #SingleInstance force
 #InstallMouseHook
+SetKeyDelay , -1
+SetBatchLines  , -1
 
+; Debug Variables
+giftspam = 100
 
-giftspam = 30
 KEYESCAPE = 1
 KEYWINKEY = 1
-
 IFCOP = 1
 IFCIV = 0
 DONATOR = 1
 LASTDICEFAIL = 1
 ENABLE_DEBUG_TIMESTAT = 1
+ENABLE_CHATRAIN = 1 ; Output to rainmeter
+ENABLE_CHATRAIN_DEBUG = 1
+BORDERFIX = 0 ; Enter Window Mode
 
-SetKeyDelay , -1
-SetBatchLines  , -1
-inifile = %A_ScriptDir%\fishlog.ini
-;inifile = %USERPROFILE%\MYDOCU~1\GTASAN~1\SAMP\fishlog.ini
+	;FileDelete , chat.txt
+	FileDelete , nomatch.txt
+
+; GUI Defualt location
+X= 100
+Y= 100
+Width = 640
+Height = 480
+
+; Preset Command Variables more to be converted
+DELIVERCMD = truck
+
+
+; Find My Docs Via Regisrty
+RegRead, MYDOCS_REG, HKCU , Software\Microsoft\Windows\CurrentVersion\Explorer\Shell Folders , Personal
+IfExist %MYDOCS_REG%\GTASAN~1\SAMP\fishlog.ini
+{
+	DOCSFOUND = 1
+	inifile = %MYDOCS_REG%\GTASAN~1\SAMP\fishlog.ini
+	goto PREBOOT
+	
+}
+	
+; Find My Docs Via Path Enviroment
+IfExist %USERPROFILE%\GTASAN~1\SAMP\fishlog.ini
+{
+	DOCSFOUND = 2
+	inifile = %A_ScriptDir%\fishlog.ini	
+	goto PREBOOT
+}
+
+; Existing INIFILE not found creating from regkey.
+FileAppend, `n , %MYDOCS_REG%\GTASAN~1\SAMP\fishlog.ini
+if errorlevel = 1
+{
+	; Failed to locate INIFILE, Creating in same folder.
+	inifile = %A_ScriptDir%\fishlog.ini
+	DOCSFOUND = 3
+	goto PREBOOT
+	FileAppend, `n , %inifile%
+	if errorlevel = 1
+	{
+		msgbox Could not create inifile `nSettings will not be saved
+		DOCSFOUND = 0
+	}
+	DOCSFOUND = 4
+}
+
+
+
+PREBOOT:
+if DOCSFOUND = 4
+{
+	msgbox Setting File Created at `n%inifile%
+}
 gosub INIREAD
 gosub CHECKCHAT
 return
@@ -56,6 +115,7 @@ BOOT = 1
 	Menu, MyMenuBar, Add, &Chatlog, :ChatlogMenu
 	Gui, Menu, MyMenuBar
 	Gui, Show, X%X% Y%Y% W%Width% H%Height% , Crazybobs Cops and Robbers 
+
 	IfExist, %logfile%
 		LV_Add("", " Fishlog Ready")
 	if CANCELED = 1
@@ -73,20 +133,23 @@ return
 
 
 READLOG:
-IfWinNotActive ,GTA:SA:MP
-	return
-IfWinNotExist ,GTA:SA:MP
-	return
-
-IF READCHATON = 0
-	return
+TESTRUN = 0
+If TESTRUN = 0
+{
+	IF READCHATON = 0
+		return
+	IfWinNotActive ,GTA:SA:MP
+		return
+	IfWinNotExist ,GTA:SA:MP
+		return
 	FileGetSize, LOGFILESIZE, %logfile%
 	if LOGFILESIZE2 = %LOGFILESIZE%
-	{
 		return
-	}
+}
+
 	Loop, Read, %logfile%
 	{
+	;if (A_Index > 0) ; Read whole file if TESTRUN = 1
 	if (A_Index > lastReadRow)
 	{
 		if  A_LoopReadLine > 0
@@ -105,7 +168,11 @@ IF READCHATON = 0
 			ADDLINE := RegExReplace(A_LoopReadLine, "[{][A-F 0-9][A-F 0-9][A-F 0-9][A-F 0-9][A-F 0-9][A-F 0-9][}]", "")
 			StringTrimLeft , ADDLINE , ADDLINE, 11
 			if OUTPUTJOURNALON = 1
+			{
+				IfNotExist %history%
+					FileCreateDir, %history% 
 				FileAppend ,%A_LoopReadLine%`n , %history%/%A_YYYY% %A_MM% %A_DD%.txt
+			}
 			if DISPLAYNOCHAT = 0
 				LV_Add("", ADDLINE)
 			NOMATCHHIT = 0
@@ -125,11 +192,230 @@ if (readRow < lastReadRow)
 FileGetSize, LOGFILESIZE2, %logfile%
 return
 
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; Phraser ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;	 
 
 
-
 PHRASELINE:
+if ENABLE_DEBUG = 3
+	LV_Add("",A_ThisLabel)
+
+ENABLE_DEBUG_MENU = 1
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; Build Enviroment ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+
+SetTimer , Lv_Modifycol , %Lv_Modifycol%
+GOODLINE := RegExMatch(VAR1, "[[]..[:]..[:]..[]]")
+IfNotEqual , GOODLINE , 1
+	return
+
+PHRASELINES ++
+ALREADYADDED = 0
+
+Loop, Parse, line , %a_space%,
+	{
+			VAR%A_index% = %A_LoopField%
+			VARMAX = %A_index%
+	}
+	
+StringLen, VAR2LEG, VAR2
+if VAR2LEG > 0
+	VAR2LEG--
+StringTrimLeft	, VAR2E, VAR2, %VAR2LEG%
+StringTrimRight	, VAR2S, VAR2, %VAR2LEG%
+StringTrimLeft , PLAYER , VAR2 , 1
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; Player Text ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+
+if VAR2S = <						
+{		
+	if ENABLE_DEBUG_MSG = 1
+		LV_Add("", "<< " ADDLINE)
+	StringTrimLeft, PLAYER, VAR2, 1
+	StringTrimRight, PLAYER, PLAYER, 1
+	return
+}
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; Gift Giving ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+/*
+if VAR2 = ID
+{
+	IfInString, VAR4, BOT
+		return
+	else
+		giveto = %giftspam%
+		giveto--
+		gosub giveit
+		
+	return
+}
+*/
+/*
+if VAR2 = Received
+	IfInString, ADDLINE, From
+	{
+		if ENABLE_DEBUG = 4	
+			LV_Add("", " # Santa Gift " ADDLINE ) ; Received A Bar Of Soap From thebannedboy (63)
+		return
+	}
+*/
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; Gift ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+
+if VAR4 = Has
+{
+	if VAR8 = Gift!
+	{
+		if ENABLE_DEBUG = 1
+			LV_Add("","!! Gift From" VAR2 " " VAR3)
+		gosub gift
+		return	
+	}
+}
+
+if VAR2 = Gift
+	if VAR3 = Sent
+	{
+		if ENABLE_DEBUG = 1
+			LV_Add("","!! Gift Sent" VAR5 " " VAR6) ; Gift Sent To Kiwika (93).  Wait To See If He Will Accept.
+		GIFT_GIVEN++
+		return	
+	}
+
+if VAR8 = Gift.
+	if VAR5 = Not
+	{
+		if ENABLE_DEBUG = 1
+			LV_Add("","!! Gift Cancelled" VAR2 " " VAR3) ; Kiwika (93) Has Not Accepted Your Gift.  Gift Cancelled.
+		GIFT_FAIL++
+		return	
+	}
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; Christmas ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+
+if (VAR2 = "Merry" or VAR2 = "{FF0000}Merry")
+	if (VAR3 = "Christmas!" or VAR3 ="{32CD32}Christmas") 
+	{
+		if ENABLE_DEBUG = 4	
+			LV_Add("", " # Merry Christmas ")
+		return
+	}
+	
+if VAR7 = Santa
+{
+	if VAR8 = Mission
+	{
+		if ENABLE_DEBUG = 4	
+			LV_Add("", " # Santa " VAR2 " Delivered " VAR10 ) ; Vojislav_SESELJ (91) Has Completed A Santa Mission With 14 Gifts Delivered.
+		return
+	}
+}	
+	
+if VAR8 = Santa
+	if VAR9 = Record
+	{
+		if ENABLE_DEBUG = 4	
+			LV_Add("", " # Santa " VAR2 " Record " VAR10 ) ; [M]OPTiONS (151) Has Set A New Santa Record With 48 Gifts Delivered.
+		return
+	}
+
+
+if VAR2 = Santa
+{
+	if VAR6 = Gift
+	{
+		
+		if ENABLE_DEBUG = 4	
+			LV_Add("", " # Santa Gift Drop" VAR9 " " VAR10 ) ; Santa Has Lost A Gift Somewhere In Las Venturas.  Find it Before Anyone Else!
+		return
+	}
+	
+	if VAR9 = Record
+	{
+		
+		if ENABLE_DEBUG = 4	
+			LV_Add("", " # Santa Record " VAR2 " " VAR11 ) ; [M]OPTiONS (151) Has Set A New Santa Record With 48 Gifts Delivered.
+		return
+	}
+	
+	if VAR9 = Gift!
+	{
+		
+		if ENABLE_DEBUG = 4	
+			LV_Add("", " # Santa Record " VAR3 " " VAR4 ) ; Santa Trendy_Killer (162) Has Given You A Gift!
+		return
+	}	
+}
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; Easter ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+
+if VAR2 = {FF66FF}The
+{
+	if VAR4 = Bunny
+	{
+		if ENABLE_DEBUG_HELP = 1
+			LV_Add("", "#  The Easter Bunny Dropped an Egg")
+		return
+	}
+}
+
+if VAR2 = {FF66FF}Happy
+{
+	if VAR3 = Easter{FFFFFF}!
+	{
+		if ENABLE_DEBUG_HELP = 1
+			LV_Add("", "#  Happy Easter! " VAR4 " " VAR5 " Found an Easter Egg")
+		return
+	}
+}
+if VAR2 = Happy
+{
+	if VAR3 = Easter!
+	{
+		if ENABLE_DEBUG_HELP = 1
+			LV_Add("", "#  Happy Easter! /givegift")
+		return
+	}
+}
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; Fire ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;	
+
+
+if VAR3 = Fire
+{
+	if VAR5 = Broken
+	{
+		if ENABLE_DEBUG = 4	
+			LV_Add("", " # Fire at " VAR8 " " VAR9 " " VAR10 ) ; A Fire Has Broken Out In LVA Freight Depot.
+		return
+	}
+	IfInString, ADDLINE, Firemen.
+	{
+		if ENABLE_DEBUG = 4	
+			LV_Add("", " # Fire Extinguished " VAR8 " " VAR9 " " VAR10 ) ; The Fire In Whitewood Estates Has Been Extinguished By 2 Firemen.
+		return
+	}
+	IfInString, ADDLINE, Extinguished
+	{
+		if ENABLE_DEBUG = 4	
+			LV_Add("", " # Fire Extinguished " VAR2 " " VAR3 " " VAR4 " by " VAR13 ) ; The Fire In LVA Freight Depot Has Been Extinguished By Fireman =Larry= (130).
+		return
+	}
+	
+}
+
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; Console ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 
 if VAR2 = (WHISPER)
@@ -158,7 +444,7 @@ if VAR2 = (WHISPER)
 		{
 			PLAYER = %VAR7%
 			gosub ADDIGNORE
-			LV_Add("", " !! IGNORE " VAR7 " Already added ")
+			LV_Add("", " !! IGNORE " VAR7 " Was added ")
 		}
 		IfInString, VAR6 , !print
 		{
@@ -173,7 +459,7 @@ if VAR2 = (WHISPER)
 			
 			LV_Add("", " !! print " VARPRINT " = " VARPRINT2 )
 		}
-		IfInString, VAR6 , !Set ;dealy 2000
+		IfInString, VAR6 , !Set
 		{
 			Foo = VAR7
 			%Foo%:=%Foo%
@@ -192,8 +478,11 @@ if VAR2 = (WHISPER)
 				VAR8 = %VAR8%{space}
 			%VARSET%:=VAR8
 			LV_Add("", " !! set " VARSET " = " VARSET2 )
-		}
-		IfInString, VAR6 , !Run 
+			
+			
+		} 
+
+/*		IfInString, VAR6 , !Run ; Diabled for user saftey
 		{
 			LV_Add("", " !! print " VAR7)
 			if VAR8 =
@@ -201,44 +490,393 @@ if VAR2 = (WHISPER)
 			Run, %VAR7%  , , Hide
 			
 		}
+*/		return
+	}
+}
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; START Menu Filter
+
+if VAR2 = Press
+{
+	if VAR3 = F6
+	{
+		;MsgBox, %MENU_OPTIONS%	
+		;MENU_OPTIONS := RegExReplace(MENU_OPTIONS, "\n?[0-9]?[0-9]\s?-\s", "`n", ReplacementCount)
+		;MsgBox, %SHOW_MENU%`n%MENU_OPTIONS%	
+		
+		;;;;;;;;;;;;;;;;;;;;;;;Output to RainMeter;;;;;;;;;;;;;;;;;;;;;;;;
+
+		FileDelete, Menu.txt
+		FileAppend, %SHOW_MENU%`n%MENU_OPTIONS%`n, Menu.txt
+		
+		;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+		
+		SHOW_MENU = 
+		MENU_OPTIONS =
+		return
+		
+	}
+}			
+			
+
+if (VAR2 = "Text" and VAR3 = "Draw")   ;Text Draw Menus Now {FF0000}OFF{FFFFFF}.  Using {00AAFF}Classic Text Menu {FFFFFF}System.
+	{
+
+		if (VAR6 = "{FF0000}OFF{FFFFFF}" or VAR6 = "OFF")
+		{
+			VAR6 = OFF
+			MENU_ENABLED = 0
+			if ENABLE_DEBUG = 4	
+				LV_Add("", " # Text Draws Off" )
+		}
+		if (VAR6 = "{FF0000}ON{FFFFFF}" or VAR6 = "ON")
+		{
+			VAR6 = ON
+			MENU_ENABLED = 1
+			if ENABLE_DEBUG = 4	
+				LV_Add("", " # Text Draws On" )	
+		}
+		
+		if ENABLE_DEBUG_MENU = 1
+			LV_Add("", "# Text Draw Menus " VAR6)
+		return	
+	}
+
+
+if (VAR2 = "Today's" and VAR4 = "Fish:")
+	{
+		if ENABLE_DEBUG_MENU = 1
+			LV_Add("", "# Bonus Fish" VAR5 " " VAR12)
+		SHOW_MENU = Bonus Fish
+		return
+	}	
+
+if VAR2 = House:
+	{
+		if ENABLE_DEBUG_MENU = 1
+			LV_Add("", "# Extenal House Menu " ADDLINE)
+		SHOW_MENU = Extenal House
 		return
 	}
-}
-
-SetTimer , Lv_Modifycol , %Lv_Modifycol%
-GOODLINE := RegExMatch(VAR1, "[[]..[:]..[:]..[]]")
-IfNotEqual , GOODLINE , 1
-	return
+	
 
 
-PHRASELINES ++
-ALREADYADDED = 0
-
-if ENABLE_DEBUG = 3
-	LV_Add("",A_ThisLabel)
-Loop, Parse, line , %a_space%,
+If VAR2 = House 
+	if VAR3 = Co-Owner
 	{
-			VAR%A_index% = %A_LoopField%
-			VARMAX = %A_index%
+		if ENABLE_DEBUG_MENU = 1
+			LV_Add("", "# House Co-Owner Menu")
+		SHOW_MENU = House Co-Owner
+		return
+	}
+
+If VAR2 = Xoomer 
+	if VAR3 = Garage
+	{
+		if ENABLE_DEBUG_MENU = 1
+			LV_Add("", "# Xoomer Garage Menu")
+		SHOW_MENU = Xoomer Garage
+		return
+	}
+
+If VAR2 = Auto 
+	if VAR3 = Bahn
+	{
+		if ENABLE_DEBUG_MENU = 1
+			LV_Add("", "# Auto Bahn Menu")
+		SHOW_MENU = Auto Bahn
+		return
+	}
+
+If VAR2 = Las 
+	if VAR4 = Docks
+	{
+		if ENABLE_DEBUG_MENU = 1
+			LV_Add("", "# Las Venturas Docks Menu")
+		SHOW_MENU = Las Venturas Docks
+		return
 	}
 	
-StringLen, VAR2LEG, VAR2
-if VAR2LEG > 0
-	VAR2LEG--
-StringTrimLeft	, VAR2E, VAR2, %VAR2LEG%
-StringTrimRight	, VAR2S, VAR2, %VAR2LEG%
-StringTrimLeft , PLAYER , VAR2 , 1
+IfInString, VAR2 , Fish
+	IfInString, VAR3, Record
+	{
+		if ENABLE_DEBUG_MENU = 1
+			LV_Add("", "# Fish Records Menu")
+		SHOW_MENU = Fish Records
+		return
+	}
+	
+If VAR2 = Select 
+	if VAR4 = Fish
+	{
+		if ENABLE_DEBUG_MENU = 1
+			LV_Add("", "# Fish Release Menu")
+		SHOW_MENU = Fish Release
+		return
+	}
+
+If VAR2 = Clothes 
+	if VAR3 = Purchase
+	{
+		if ENABLE_DEBUG_MENU = 1
+			LV_Add("", "# Clothes Purchase Menu")
+		SHOW_MENU = Clothes Purchase
+		return
+	}
+
+If VAR2 = Clothes 
+	if VAR4 = Accessories
+	{
+		if ENABLE_DEBUG_MENU = 1
+			LV_Add("", "# Clothes & Accessories Menu")
+		SHOW_MENU = Clothes & Accessories
+		return
+	}
+
+If VAR2 = ATM 
+	if VAR4 = Account
+	{
+		INV_BANK = %VAR6%
+		if ENABLE_DEBUG_MENU = 1
+			LV_Add("", "# ATM Menu")
+		SHOW_MENU = ATM
+		return
+	}
+
+If VAR2 = Horse 
+	if VAR3 = Races
+	{
+		if ENABLE_DEBUG_MENU = 1
+			LV_Add("", "# Horse Races Menu")
+		SHOW_MENU = Horse Races
+		return
+	}
+
+If VAR3 = Item
+	if VAR4 = Refill
+	{
+		if ENABLE_DEBUG_MENU = 1
+			LV_Add("", "# Item Refill Menu")
+		SHOW_MENU = Item Refill
+		return
+	}
+
+If VAR2 = Total
+	if VAR3 = Stats
+	{
+		if ENABLE_DEBUG_MENU = 1
+			LV_Add("", "# Total Stats Menu")
+		SHOW_MENU = Total Stats
+		return
+	}
+
+If VAR2 = Hospital
+	{
+		if ENABLE_DEBUG_MENU = 1
+			LV_Add("", "# Hospital Menu")
+		SHOW_MENU = Hospital
+		return
+	}
+
+If VAR2 = Casino
+	{
+		if ENABLE_DEBUG_MENU = 1
+			LV_Add("", "# Casino Menu")
+		SHOW_MENU = Casino
+		return
+	}
+
+If VAR2 = Gym
+	{
+		if ENABLE_DEBUG_MENU = 1
+			LV_Add("", "# Gym Menu")
+		SHOW_MENU = Gym
+		return
+	}
+
+If VAR2 = City
+	if VAR3 = Hall
+	{
+		if ENABLE_DEBUG_MENU = 1
+			LV_Add("", "# City Hall Menu")
+		SHOW_MENU = City Hall
+		return
+	}
+
+If VAR2 = Item
+	if VAR3 = Purchase
+	{
+		if ENABLE_DEBUG_MENU = 1
+			LV_Add("", "# Item Purchase Menu")
+		SHOW_MENU = Item Purchase
+		return
+	}
+
+If VAR2 = Pet
+	if VAR3 = Purchase
+	{
+		if ENABLE_DEBUG_MENU = 1
+			LV_Add("", "# Pet Purchase Menu")
+		SHOW_MENU = Pet Purchase
+		return
+	}
+	
+if VAR2 = Scratch'N'Win
+	{
+		if ENABLE_DEBUG_MENU = 1
+			LV_Add("", "# Scratch'N'Win Menu")
+		SHOW_MENU = Scratch'N'Win
+		return
+	}
+
+If VAR3 = Convenience 
+	if VAR4 = Store
+	{
+		if ENABLE_DEBUG_MENU = 1
+			LV_Add("", "# Convenience Store Menu")
+		SHOW_MENU = Convenience Store
+		return
+	}
+	
+If VAR2 = Menu 
+	if VAR3 = Settings
+	{
+		if ENABLE_DEBUG_MENU = 1
+			LV_Add("", "# Settings Menu")
+		SHOW_MENU = Menu Settings
+		return
+	}
+
+If VAR2 = Sell 
+	if VAR3 = Fish
+	{
+		if ENABLE_DEBUG_MENU = 1
+			LV_Add("", "# Sell Fish Menu")
+		SHOW_MENU = Sell Fish
+		return
+	}
 
 
-if VAR2S = <						; Player Text
-{		
-	if ENABLE_DEBUG_MSG = 1
-		LV_Add("", "<< " ADDLINE)
-	StringTrimLeft, PLAYER, VAR2, 1
-	StringTrimRight, PLAYER, PLAYER, 1
-	return
-}
+If VAR2 = Sex 
+	if VAR3 = Shop
+	{
+		if ENABLE_DEBUG_MENU = 1
+			LV_Add("", "# Sex Shop Menu")
+		SHOW_MENU = Sex Shop
+		return
+	}
+
+If VAR2 = Drug 
+	if VAR3 = Factory
+	{
+		if ENABLE_DEBUG_MENU = 1
+			LV_Add("", "# Drug Factory Menu")
+		SHOW_MENU = Drug Factory
+		return
+	}
+	
+If VAR2 = Stock 
+	iF VAR3 = Market
+	{
+		if ENABLE_DEBUG_MENU = 1
+			LV_Add("", "# Fish Stock Market Menu")
+		SHOW_MENU = Stock Market
+		return
+	}
+	
+If VAR2 = House 
+	iF VAR3 = Storage
+	{
+		if ENABLE_DEBUG_MENU = 1
+			LV_Add("", "# House Storage Menu")
+		SHOW_MENU = House Storage
+		return
+	}
+	
+If VAR2 = Sell 
+	iF VAR4 = Inventory
+	{
+		if ENABLE_DEBUG_MENU = 1
+			LV_Add("", "# Sell Inventory Menu")
+		SHOW_MENU = Sell Inventory
+		return
+	}
+If VAR2 = Sales 
+	iF VAR3 = Options
+	{
+		if ENABLE_DEBUG_MENU = 1
+			LV_Add("", "# Sales Options Menu")
+		SHOW_MENU = Sales Options
+		return
+	}
+If VAR2 = Commands 
+
+	{
+		if ENABLE_DEBUG_MENU = 1
+			LV_Add("", "# Commands Menu")
+		SHOW_MENU = Commands
+		return
+	}
+	
+if VAR2 = Carrying:
+	{
+		if VAR7 = Freshly
+		{
+			LV_Add("", "# Carrying " %VAR3% " - Fresh " %VAR9% " - Capacity "%VAR16% ) 
+		}
+	}
+	
+
+/*
+if (SHOW_MENU = "Drug Factory" 
+or SHOW_MENU  = "Commands" 
+or SHOW_MENU  = "Fish Records" 
+or SHOW_MENU  = "Bonus Fish" 
+or SHOW_MENU  = "Sell Inventory" 
+or SHOW_MENU  = "Sales Options" 
+or SHOW_MENU  = "House Storage" 
+or SHOW_MENU  = "Stock Market" 
+or SHOW_MENU  = "Sex Shop" 
+or SHOW_MENU = "Sell Fish" 
+or SHOW_MENU = "Menu Settings" 
+or SHOW_MENU = "Convenience Store" 
+or SHOW_MENU = "Scratch'N'Win" 
+or SHOW_MENU = "Purchase Menu" 
+or SHOW_MENU = "Pet Purchase" 
+or SHOW_MENU = "Item Purchase" 
+or SHOW_MENU = "City Hall" 
+or SHOW_MENU = "Gym" 
+or SHOW_MENU = "Casino" 
+or SHOW_MENU = "Hospital" 
+or SHOW_MENU = "Total Stats" 
+or SHOW_MENU = "Item Refill" 
+or SHOW_MENU = "Horse Races" 
+or SHOW_MENU = "ATM"  
+or SHOW_MENU = "Clothes & Accessories" 
+or SHOW_MENU = "Clothes Purchase" 
+or SHOW_MENU = "Fish Release" 
+or SHOW_MENU = "Las Venturas Docks" 
+or SHOW_MENU = "Auto Bahn"  
+or SHOW_MENU = "Xoomer Garage"  
+or SHOW_MENU = "House Co-Owner"  
+or SHOW_MENU = "Extenal House")
+*/
+if (VAR2 = 1 or VAR2 = 2 or VAR2 = 3 or VAR2 = 4 or VAR2 = 5 or VAR2 = 6 or VAR2 = 7 or VAR2 = 8 or VAR2 = 9 or VAR2 = 10 or VAR2 = 11 or VAR2 = 12 or VAR2 = 13 or VAR2 = 14 or VAR2 = 15 or VAR2 = 16 or VAR2 = 17 or VAR2 = 18 or VAR2 = 19 or VAR2 = 20 or VAR2 = 21 or VAR2 = 22 or VAR2 = 23  )
+	{
+		MENU_OPTIONS = %MENU_OPTIONS%`n%ADDLINE%
+		return
+	}
+	
+	
+			
+			
+
+
+
+
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;START FISH Filter;;;;;;;;;;;;;;;;;;;;
+
 
 
 if VAR2 = Fishing...
@@ -249,6 +887,7 @@ if VAR2 = Fishing...
 	PLAYERISINPD = 0
 	return
 }
+
 if VAR2 = Fishing
 {
 	if VAR3 = Tournament
@@ -262,32 +901,11 @@ if VAR2 = Fishing
 	FISH = 1
 	return
 }
-if VAR2 = Press 					
-{
-	if VAR12 = {D6D631}/fish
-	{
-		if ENABLE_DEBUG_HELP = 1
-			LV_Add("", "# Fishing Here")
-		BOAT = 1
-		IF FPS = %FPSLOW%
-			gosub FPSHIGH
-		
-		if FISH = 1
-		gosub FISH
-		SetTimer, vehc , 500
-		return
-	}
-	if VAR12 = {D6D631}/delivery
-	{
-		ISINTRUCK = 1
-		if ENABLE_DEBUG_DELIVERY = 1
-			LV_Add("", "# Trucking Now?")
-		if AUTOTRUCKING = 1
-			gosub delivery
-		BOAT = 0
-		return
-	}
-}
+
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;; Removed ; Rod ;;;;;;;;;;;;;;;;;;;;;;;;
+
 if VAR4 = Removed
 {
 	if VAR6 = Fishing
@@ -299,6 +917,9 @@ if VAR4 = Removed
 		return
 	}
 }
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; Cannot ; Sell ;;;;;;;;;;;;;;;;;;;;;
+
 if VAR3 = Cannot
 {
 	if VAR4 = Sell
@@ -310,47 +931,61 @@ if VAR3 = Cannot
 		return
 	}	
 }
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; Failed ;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
 if VAR3 = Failed
 {
+	if VAR5 = Catch
+	{
+		if ENABLE_DEBUG_FISH = 1
+			LV_Add("", "# Fishing Failed")
+		FISHOUT = 6
+		gosub FISHOUT
+		goto FISHING
+		return
+	}
 	if VAR6 = Catch
 	{
-		FISH_FAILED++
 		if ENABLE_DEBUG_FISH = 1
-			LV_Add("", "# Fishing Failed to Catch " FISHFAIL)
+			LV_Add("", "# Fishing Failed")
 		FISHOUT = 2
-		
 		gosub FISHOUT
 		gosub FISHING
 		return
 	}
 }
+
+;;;;;;;;;;;;;;;;;;;;;;; Not Fish Zone ;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+if VAR4 = Only
+{
+	if VAR5 = Fish
+	{
+		if ENABLE_DEBUG_FISH = 1
+			LV_Add("", "# Fishing Not Here")
+		FISH = 1
+		return
+	}
+}
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; Thrown ;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
 if VAR4 = Thrown
 {	
-	FISH_THROWN++
 	if VAR9 = Back
 		VAR9 = 
 	if ENABLE_DEBUG_FISH = 1
 		LV_Add("", "# Fishing Thrown " VAR6 " " VAR8 " " VAR9)
 	return
 }
-if VAR3 = Mermaid 
-{
-	if VAR4 = HAS
-	{
-		FISH_MERMAID++
-		if ENABLE_DEBUG_FISH = 1
-			LV_Add("", "# Fishing Attacked Mermaid")
-		FISHOUT = 3
-		gosub FISHOUT
-		gosub FISHING
-		return
-	} 
-}
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; Found ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
 if VAR3 = Found
-{
+{	
 	if VAR4 = Nemo!
 	{
-		FISH_NEMO++
 		if ENABLE_DEBUG_FISH = 1
 			LV_Add("", "# Fishing Found Nemo")
 		FISHOUT = 4
@@ -358,7 +993,19 @@ if VAR3 = Found
 		gosub FISHING
 		return
 	}
+	if VAR6 = Body.
+	{
+		if ENABLE_DEBUG_FISH = 1
+			LV_Add("", "# Fishing Dead Body")
+		FISHOUT = 7
+		gosub FISHOUT
+		gosub FISHING
+		return
+	}	
 }
+
+;;;;;;;;;;;;;;;;;;;;;;; Fishing ;;;;;;;;;;;;;;;;;;;;;;
+
 if VAR7 = Fishing
 {
 	if ENABLE_DEBUG_FISH = 1
@@ -387,11 +1034,13 @@ if VAR7 = Fishing
 		return
 	}
 }
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;; Killed ; Monster ;;;;;;;;;;;;;;;;;;;;;;;
+
 if VAR3 = Killed
 {
 	if VAR6 = Monster
 	{
-		FISH_DEADMONSTER++
 		if ENABLE_DEBUG_FISH = 1
 			LV_Add("", "# Sea Monster Killed ")
 		FISHOUT = 5
@@ -400,103 +1049,13 @@ if VAR3 = Killed
 		return
 	}	
 }
-if VAR3 = Failed
-{
-	if VAR5 = Catch
-	{
-	FISH_FAILED++
-	if ENABLE_DEBUG_FISH = 1
-	LV_Add("", "# Fishing Failed")
-		FISHOUT = 6
-		gosub FISHOUT
-		goto FISHING
-		return
-	}
-}	
-if VAR3 = Found
-{
-	if VAR6 = Body.
-	{
-	FISH_ARMOUR++
-	if ENABLE_DEBUG_FISH = 1
-		LV_Add("", "# Fishing Dead Body")
-		FISHOUT = 7
-	gosub FISHOUT
-	gosub FISHING
-	return
-	}	
-}
-if VAR3 = Were
-{
-	if VAR4 = Raped
-	{
-		FISH_RAPED++
-		if ENABLE_DEBUG_FISH = 1
-			LV_Add("", "# Fishing Mermaid Raped")
-		FTD = 4
-		FISHOUT = 8
-		gosub takedrugs
-		gosub FISHOUT
-		gosub FISHING
-		return
-	}
-}
-if VAR4 = Only
-{
-	if VAR5 = Fish
-	{
-		FISH_INVALID++
-		if ENABLE_DEBUG_FISH = 1
-			LV_Add("", "# Fishing Not Here")
-		FISH = 1
-		return
-	}
-}
-if VAR3 = Also
-{
-	if VAR4 = Receive
-	{	
-		FISH_RECORD++
-		if ENABLE_DEBUG_FISH = 1
-			LV_Add("", "# Fishing Record Fish " VAR6)
-			return
-	}										
-}
-if VAR7 = Treasure
-{
-	FISH_TREASURE++
-	if ENABLE_DEBUG_FISH = 1
-		LV_Add("", "# Fishing Treasure " VAR9)
-	
-		FISHOUT = 9
-	gosub FISHOUT
-	gosub FISHING
-	return
-}
-if VAR4 = Thrown
-{	
-	FISH_THROWN++
-	if ENABLE_DEBUG_FISH = 1
-		LV_Add("", "# Fishing Throwback")		
-	THROWBACK = 0
-	return
-}				
-if VAR4 = Already
-{
-	if VAR5 = Fishing
-	{				
-		FISH_ALREADY++
-		if ENABLE_DEBUG_FISH = 1
-		LV_Add("", "# Fishing Already")
-		return
-	}
-}
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;; Attacked ; Monster ;;;;;;;;;;;;;;;;;;;;;;;;;
+
 if VAR5 = Attacked
 {
 	if VAR8 = Sea
 	{	
-		FISH_MONSTEREAT_TIMES++
-		FISH_MONSTEREAT_TOTAL+= %VAR12%
 		if ENABLE_DEBUG_FISH = 1
 			LV_Add("", "# Fishing Sea Monster Attacked " VAR12 " Fish Lost")
 		IfNotInString , FISHINGCAUGHT , SeaMonster	
@@ -508,11 +1067,114 @@ if VAR5 = Attacked
 		return
 	}
 }
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; Mermaid ;;;;;;;;;;;;;;;;;;;;;;;;
+
+if VAR3 = Were
+{
+	if VAR4 = Raped
+	{
+		if ENABLE_DEBUG_FISH = 1
+			LV_Add("", "# Fishing Mermaid Raped")
+		FTD = 4
+		FISHOUT = 8
+		gosub takedrugs
+		gosub FISHOUT
+		gosub FISHING
+		return
+	}
+}
+	
+if VAR3 = Mermaid 
+{
+	if VAR4 = HAS
+	{
+		if ENABLE_DEBUG_FISH = 1
+			LV_Add("", "# Fishing Attacked Mermaid")
+		FISHOUT = 3
+		gosub FISHOUT
+		gosub FISHING
+		return
+	} 
+}
+
+
+
+;;;;;;;;;;;;;;;;;;;;;; Record Fish ;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+if VAR3 = Also
+{
+	if VAR4 = Receive
+	{	
+		if ENABLE_DEBUG_FISH = 1
+			LV_Add("", "# Fishing Record Fish " VAR6)
+			return
+	}										
+}
+
+;;;;;;;;;;;;;;;;;;;;; Treasure ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+if VAR7 = Treasure
+{
+	if ENABLE_DEBUG_FISH = 1
+		LV_Add("", "# Fishing Treasure " VAR9)
+	
+		FISHOUT = 9
+	gosub FISHOUT
+	gosub FISHING
+	return
+}
+
+;;;;;;;;;;;;;;;;;;;;;;; Throwback ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+if VAR4 = Thrown
+{	
+	if ENABLE_DEBUG_FISH = 1
+		LV_Add("", "# Fishing Throwback")		
+	THROWBACK = 0
+	return
+}	
+
+;;;;;;;;;;;;;;;;;;;;;;;;; Already Fishing ;;;;;;;;;;;;;;;;;;;;;;;;;
+
+if VAR4 = Already
+	if VAR5 = Fishing
+{				
+	if ENABLE_DEBUG_FISH = 1
+		LV_Add("", "# Fishing Already")
+	return
+}
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; IFINSTRING ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+	
+	
+IfInString VAR6, Bird
+	{
+		if ENABLE_DEBUG_FISH = 1
+			LV_Add("", "# Fishing Bird Eaten VAR6")
+		FISHOUT = 4
+		gosub FISHOUT
+		gosub FISHING
+		return
+	} 
+		
+IfInString VAR8, Bird
+	{
+		if ENABLE_DEBUG_FISH = 1
+			LV_Add("", "# Fishing Bird Eaten VAR8")
+		FISHOUT = 4
+		gosub FISHOUT
+		gosub FISHING
+		return
+	} 
+	
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; Caught ;;;;;;;;;;;;;;;;;;;;;;;;;
+	
 if VAR3 = Caught
 {
 	if VAR7 = Whale
 	{
-		FISH_WHALE++
 		if ENABLE_DEBUG_FISH = 1
 			LV_Add("", "# Fishing Caught Whale")	
 		IfNotInString , FISHINGCAUGHT , Whale	
@@ -526,7 +1188,6 @@ if VAR3 = Caught
 	}
 	if VAR5 = Toilet
 	{
-		FISH_TOILET++
 		if ENABLE_DEBUG_FISH = 1
 			LV_Add("", "# Fishing Caught Toilet")	
 		IfNotInString , FISHINGCAUGHT , %VAR5%	
@@ -539,7 +1200,6 @@ if VAR3 = Caught
 	}
 	if VAR5 = Crab
 	{
-		FISH_CRAB++
 		if ENABLE_DEBUG_FISH = 1
 			LV_Add("", "# Fishing Caught Crab")	
 		IfNotInString , FISHINGCAUGHT , %VAR5%	
@@ -554,7 +1214,6 @@ if VAR3 = Caught
 	}
 	if VAR5 = Sunfish
 	{
-		FISH_SUNFISH++
 		if ENABLE_DEBUG_FISH = 1
 			LV_Add("", "# Fishing Caught Sunfish")	
 		IfNotInString , FISHINGCAUGHT , %VAR5%	
@@ -567,7 +1226,6 @@ if VAR3 = Caught
 	}
 	if VAR5 = Body
 	{
-		FISH_BODYARMOR++
 		if ENABLE_DEBUG_FISH = 1
 			LV_Add("", "# Fishing Caught Body Armor")	
 		IfNotInString , FISHINGCAUGHT , %VAR6%	
@@ -579,8 +1237,7 @@ if VAR3 = Caught
 		return
 	}
 	if VAR5 = Used
-	{
-		FISH_CONDOM_USED++
+	{		
 		if ENABLE_DEBUG_FISH = 1
 			LV_Add("", "# Fishing Caught Used Condom")	
 		IfNotInString , FISHINGCAUGHT , %VAR6%	
@@ -592,8 +1249,7 @@ if VAR3 = Caught
 		return
 	}
 	if VAR5 = Condom
-	{	
-		FISH_CONDOM_NEW++
+	{		
 		if ENABLE_DEBUG_FISH = 1
 			LV_Add("", "# Fishing Caught Condom")	
 		IfNotInString , FISHINGCAUGHT , %VAR5%	
@@ -606,7 +1262,6 @@ if VAR3 = Caught
 	}
 	if VAR5 = Seaweed.
 	{
-		FISH_SEAWEED++
 		if ENABLE_DEBUG_FISH = 1
 			LV_Add("", "# Fishing Caught Seaweed")	
 		IfNotInString , FISHINGCAUGHT , %VAR5%	
@@ -619,7 +1274,6 @@ if VAR3 = Caught
 	}
 	if VAR5 = Weapon
 	{
-		FISH_WEAPON++
 		if ENABLE_DEBUG_FISH = 1
 			LV_Add("", "# Fishing Caught Weapon")	
 		IfNotInString , FISHINGCAUGHT , Weapons	
@@ -632,7 +1286,6 @@ if VAR3 = Caught
 	}
 	if VAR5 = Jelly
 	{
-		FISH_JELLYFISH++
 		if ENABLE_DEBUG_FISH = 1
 			LV_Add("", "# Fishing Caught Jelly")
 		IfNotInString , FISHINGCAUGHT , JellyFish	
@@ -647,7 +1300,6 @@ if VAR3 = Caught
 	}
 	if VAR5 = Drug
 	{
-		FISH_DRUGS_CASE++
 		if ENABLE_DEBUG_FISH = 1
 			LV_Add("", "# Fishing Caught Drug")	
 		IfNotInString , FISHINGCAUGHT , Drugs	
@@ -660,7 +1312,6 @@ if VAR3 = Caught
 	}
 	if VAR5 = Old
 	{
-		FISH_OLD++
 		if ENABLE_DEBUG_FISH = 1
 			LV_Add("", "# Fishing Caught Old")	
 		IfNotInString , FISHINGCAUGHT , %VAR5%	
@@ -673,9 +1324,8 @@ if VAR3 = Caught
 	}
 	if VAR5 = Car
 	{
-		FISH_CARTIRE++
-		if ENABLE_DEBUG_FISH = 1
-			LV_Add("", "# Fishing Caught Car Tire")	
+	if ENABLE_DEBUG_FISH = 1
+		LV_Add("", "# Fishing Caught Car Tire")	
 		IfNotInString , FISHINGCAUGHT , Tyre	
 
 			FISHINGCAUGHTFISH = %FISHINGCAUGHTFISH% Tyre %A_Space%	
@@ -686,7 +1336,6 @@ if VAR3 = Caught
 	}
 	if VAR5 = Money
 	{
-		FISH_MONEY++
 		if ENABLE_DEBUG_FISH = 1
 			LV_Add("", "# Fishing Caught Money")	
 		IfNotInString , FISHINGCAUGHT , %VAR5%	
@@ -699,7 +1348,6 @@ if VAR3 = Caught
 	}
 	if VAR5 = Clam
 	{
-		FISH_CLAM++
 		if ENABLE_DEBUG_FISH = 1
 			LV_Add("", "# Fishing Caught Clam")	
 		IfNotInString , FISHINGCAUGHT , %VAR5%	
@@ -712,7 +1360,6 @@ if VAR3 = Caught
 	}
 	if VAR5 = Bonus
 	{
-		FISH_BONUS++
 		if ENABLE_DEBUG_FISH = 1
 			LV_Add("", "# Fishing Caught Bonus")	
 		IfNotInString , FISHINGCAUGHT , Bonus	
@@ -857,9 +1504,6 @@ if VAR3 = Sold
 {
 	if VAR5 = Fish
 	{
-		FISH_SOLD++
-		FISH_SOLD_AMOUNT+= %VAR4%
-		FISH_SOLD_TOTAL+= %VAR10%
 		if ENABLE_DEBUG_FISH = 1
 			LV_Add("","$ Sold Fish " VAR4 " For " VAR10)
 		return
@@ -869,47 +1513,33 @@ if VAR4 = Receive
 {
 	if VAR7 = Fisherman
 	{
-		FISH_AWARD++
 		if ENABLE_DEBUG_FISH = 1
-			LV_Add("","# Fisherman Of The Day Award! " VAR14 " " VAR17)
+			LV_Add("", "#  Fisherman Of The Day Award! " VAR14 " " VAR17)
 		return
 	}
 }
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;END FISH FILTER;;;;;;;;;;;;;;;;;
-if VAR4 = Gives
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; The ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+
+if VAR2 = The
 {
-	IfInString, VAR7 , Flowers
-	{
-		if ENABLE_DEBUG_FLOWER = 1
-			LV_Add("","!! Work Flowers " VAR2 " " VAR3 " Gives " VAR5 " " VAR6)
-		IfNotInString , WORKERS , %VAR2%
-			WORKERS = %WORKERS% %VAR2% %a_space%
-		return
-	}
-	IfInString, VAR8 , Kiss
-	{
-		if ENABLE_DEBUG_HELP = 1
-			LV_Add("","!! Kiss" VAR2 " " VAR3 " Gives " VAR5 " " VAR6)
-		return
-	}
-}
-if VAR2 = Sorry,
-{
-	if VAR4 = Selling
+	if VAR3 = Cake
 		{
-			if ENABLE_DEBUG_HELP = 1
-				LV_Add("","# Wait Till 2:00")
+		if VAR6 = Lie.
+		{
+			if ENABLE_DEBUG_MONEY = 1
+				LV_Add("", "#  The Cake Is A Lie.")
 			return
 		}
-}
-if VAR2 = The
-{	
+	}
 	if VAR3 = IRS
 	{
 		if VAR4 = Ordered
 		{
 			if ENABLE_DEBUG_MONEY = 1
-				LV_Add("","# The IRS Has Ordered You To Pay Taxes " VAR12)
+				LV_Add("", "#  The IRS Has Ordered You To Pay Taxes " VAR12)
 			return
 		}
 	}
@@ -918,13 +1548,13 @@ if VAR2 = The
 		if VAR5 = Almost
 		{
 			if ENABLE_DEBUG_SERVER = 1
-				LV_Add("","# Server Week Almost Over")
+				LV_Add("", "#  Server Week Almost Over")
 			return
 		}
 		if VAR5 = Over!
 		{
 			if ENABLE_DEBUG_SERVER = 1
-				LV_Add("","# Server Week Over")
+				LV_Add("", "#  Server Week Over")
 			return
 		}
 	}
@@ -933,7 +1563,7 @@ if VAR2 = The
 		if VAR = Week
 		{
 			if ENABLE_DEBUG_SERVER = 1
-				LV_Add("","# Server Restart Soon")
+				LV_Add("", "#  Server Restart Soon")
 			return
 		}
 	}
@@ -941,7 +1571,7 @@ if VAR2 = The
 		if VAR7 = Hasn't
 		{
 			if ENABLE_DEBUG_BONUS = 1
-				LV_Add("","$ Work Bonus " VAR5 " Not Sold Yet")
+				LV_Add("","$ Bonus Vehicle " VAR5 " Not Sold Yet")
 			gosub vsi
 			return
 		}
@@ -1095,6 +1725,74 @@ if VAR2 = The
 }
 
 
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; Server ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+if VAR2 = Screenshot
+{
+	if VAR3 = Taken 
+	{
+		SCREENSHOTS++
+		if ENABLE_DEBUG_HELP = 1
+			LV_Add("", "#  Screenshot Taken ")
+		return
+	}
+}
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; Password Fail ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+
+if VAR2 = Password
+{
+	if VAR3 = Incorrect.
+	{
+		PASSWORD_FAIL++
+		if PASSWORD_FAIL = 2
+		{
+			LV_Add("","? Logon Aborted, Wrong Password" )
+			return
+		}
+		if ENABLE_DEBUG_HELP = 1
+			LV_Add("","? Wrong Password" )
+		sleep 500
+		gosub login
+		return
+	}
+}
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; Now Sitting ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+if VAR2 = Now
+{
+	IfInString , VAR3 , Sitting
+	{
+		if ENABLE_DEBUG_HELP = 1
+			LV_Add("", "# Now Sitting")
+		return
+	}
+}
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; New Life ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+
+if VAR2 = Beginning
+{
+	if VAR5 = Life
+	{
+		if ENABLE_DEBUG_HELP = 1
+			LV_Add("", "# New Life")
+		return
+	}
+}
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; Bonus ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+
 if VAR2 = Money
 {
 	if VAR3 = Rush!
@@ -1109,60 +1807,19 @@ if VAR2 = Money
 if VAR6 = Catch
 {
 	if ENABLE_DEBUG_BONUS = 1
-		LV_Add("","# Bonus First Person To Catch Gets " VAR10)
+		LV_Add("", "#  Bonus First Person To Catch Gets " VAR10)
 	return
 }
+
 if VAR3 = First
 {
 	if ENABLE_DEBUG_BONUS = 1
-		LV_Add("","# Bonus First Person To Sell Gets " VAR13)
+		LV_Add("", "#  Bonus First Person To Sell Gets " VAR13)
 	return
 }
-if VAR2 = Screenshot
-{
-	if VAR3 = Taken 
-	{
-		if ENABLE_DEBUG_HELP = 1
-			LV_Add("","# Screenshot Taken ")
-		return
-	}
-}
-if VAR2 = Password
-{
-	if VAR3 = Incorrect.
-	{
-		if ENABLE_DEBUG_HELP = 1
-			LV_Add("","? Wrong Password" )
-		gosub login
-		return
-	}
-}
-if VAR2 = Now
-{
-	IfInString , VAR3 , Sitting
-	{
-		if ENABLE_DEBUG_HELP = 1
-			LV_Add("", "# Now Sitting")
-		return
-	}
-}
-if VAR2 = Beginning
-{
-	if VAR5 = Life
-	{
-		if ENABLE_DEBUG_HELP = 1
-			LV_Add("", "# New Life")
-		return
-	}
-}
+
 if VAR3 = Bonus
 {
-	if VAR4 = Fish
-	{				
-		if ENABLE_DEBUG_HELP = 1
-			LV_Add("", "# Bonus Fish" VAR5 " " VAR12)			
-		return
-	}	
 	if VAR4 = Vehicle
 	{				
 		if ENABLE_DEBUG_HELP = 1
@@ -1170,7 +1827,11 @@ if VAR3 = Bonus
 		return
 	}	
 }
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; Time ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+
 if VAR3 = Time:
 {
 	gosub TIMESTATS
@@ -1182,24 +1843,35 @@ if VAR3 = Time:
 	}
 	return
 }	
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; (MSG)    ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; Message ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
 
 if VAR2 = PM
 {
+	;sleep 1000
 	if VAR3 = From
 	{
 		if ENABLE_DEBUG_PM = 1
-			LV_Add("", "# PM From " VAR4 " " VAR5)
+			;LV_Add("", "# PM From " VAR4 " " VAR5)
+		LV_Add("", # ADDLINE)
+		if ENABLE_CHATRAIN = 1
+			FileAppend, %ADDLINE%`n, chat.txt
 		LASTPM = %VAR4%
 		return
 	}	
 	if VAR3 = Sent
 	{
 		if ENABLE_DEBUG_PM = 1
-			LV_Add("", "# PM Sent " VAR4 " " VAR5)
+			LV_Add("", # ADDLINE)
+		if ENABLE_CHATRAIN = 1
+			FileAppend, %ADDLINE%`n, chat.txt
+			;LV_Add("", "# PM Sent " VAR4 " " VAR5)
 		return
 	}
 }
+
 if VAR2= {FAAC58}(FISH
 {
 	if VAR3 = MSG)
@@ -1211,60 +1883,72 @@ if VAR2= {FAAC58}(FISH
 		return
 	}
 }
+
 if VAR2 = (CAR
 	{
 		if ENABLE_DEBUG_WHISPER = 1
-			LV_Add("","# (WHISPER) " VAR4 " " VAR5)
+			LV_Add("", "#  (WHISPER) " VAR4 " " VAR5)
 		return
 	} 
+	
 if VAR2 = (WHISPER)
 	{
 		if ENABLE_DEBUG_WHISPER = 1
-			LV_Add("","# (WHISPER) " VAR3 " " VAR4)
+			LV_Add("", "#  (WHISPER) " VAR3 " " VAR4)
 		return
 	} 
+	
 if VAR2 = (911
 	{
 		if ENABLE_DEBUG_911 = 1
-			LV_Add("","# (911) " VAR4 " " VAR5)
+			LV_Add("", "#  (911) " VAR4 " " VAR5)
 		return
 	} 
+	
 if VAR2 = (GROUP
 	{
 		if ENABLE_DEBUG_GROUPMSG = 1
 			LV_Add("","% (GROUP MSG) " VAR4 " " VAR5)
+				if ENABLE_CHATRAIN = 1
+			FileAppend, %ADDLINE%`n, chat.txt
 		return
 	}
+	
 if VAR2 = (DM
 	{
 		if ENABLE_DEBUG_GROUPMSG = 1
 			LV_Add("","% (DM MSG) " VAR4 " " VAR5)
 		return
 	}
+	
 if VAR2 = {0044FF}(COP
 	{
 		if ENABLE_DEBUG_COPMSG = 1
 			LV_Add("","% (COP MSG) " VAR4 " " VAR5)
 		return
 	}
+	
 if VAR2 = (COP
 	{
 		if ENABLE_DEBUG_COPMSG = 1
 			LV_Add("","% (COP MSG) " VAR4 " " VAR5)
 		return
 	}
+	
 if VAR2 = {FAAC58}(TRUCKER
 	{
 		if ENABLE_DEBUG_TRUCKERMSG = 1
 			LV_Add("","% (TRUCKER MSG) " VAR4 " " VAR5)
 		return
 	}
-   if VAR2 = (DISPATCH)
+	
+if VAR2 = (DISPATCH)
 	{
 		if ENABLE_DEBUG_DISPATCH = 1
 			LV_Add("","% Crime " VAR3 " " VAR4 " Request Backup " VAR9 " " VAR10 " " VAR11)
 		return
 	} 
+	
 if VAR2 = (CRIME
 	if VAR3 = REPORT)
 	{
@@ -1275,83 +1959,10 @@ if VAR2 = (CRIME
 	
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-if VAR2 = I
-{
-	if VAR3 = Fell
-	{
-	if ENABLE_DEBUG_HELP = 1
-		LV_Add("", "# HELP I can Fell It Coming")
-	return
-	}
-}
-if VAR2 = Para
-{
-	if ENABLE_DEBUG_HELP = 1
-		LV_Add("","? Para Bailar La Bamba")
-	return
-}
 
-if VAR2 = Lazy
-{
-	if ENABLE_DEBUG_HELP = 1
-		LV_Add("","? Lazy Bastard, Get A Job!")
-	return
-}
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; Need ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-if VAR2 = Get
-{
-	if ENABLE_DEBUG_HELP = 1
-		LV_Add("","? Get More Info www.crazybobs.net")
-	return
-}
-if VAR2 = Invest
-{
-	if ENABLE_DEBUG_HELP = 1
-		LV_Add("","? Invest in Stocks")
-	return
-}
-if VAR3 = Problems?
-{
-	if ENABLE_DEBUG_HELP = 1
-		LV_Add("","? Got Problems /weapons")
-	return
-}
-if VAR3 = Sweeper
-{
-	if ENABLE_DEBUG_HELP = 1
-		LV_Add("","? Street Sweepers Wanted")
-	return
-}
-if VAR2 = Illegal
-{
-	if ENABLE_DEBUG_HELP = 1
-		LV_Add("","? Illegal Immigrants Need A Ride To Their New Jobs! ")
-	return
-}
-if VAR2 = Spotted
-{
-	if ENABLE_DEBUG_HELP = 1
-		LV_Add("","? Spotted a Crime? /911.")
-	return
-}
-if VAR2 = Feel
-{
-	if ENABLE_DEBUG_HELP = 1
-		LV_Add("","? Feel Like Killing Someone?")
-	return
-}
-if VAR2 = Does
-{
-	if ENABLE_DEBUG_HELP = 1
-		LV_Add("","? Does It Burn When You Piss?")
-	return
-}
-if VAR2 = Minor
-{
-	if ENABLE_DEBUG_HELP = 1
-		LV_Add("","? Minor Crimes Are Only Reported If Police Officers Are Close Enough")
-	return
-}
+
 if VAR2 = Need
 {
 	if VAR6 Quick
@@ -1373,15 +1984,11 @@ if VAR2 = Need
 		return
 	}
 }
-if VAR2 = All
-{
-	if VAR3 = Race
-	{
-		if ENABLE_DEBUG_HELP = 1
-			LV_Add("", " ? Free Races /challenge")
-		return
-	}
-}
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; Looking ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+
 if VAR2 = Looking
 {
 	if VAR4 = Somewhere
@@ -1415,6 +2022,10 @@ if VAR2 = Looking
 		return
 	}
 }
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; Want ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
 
 if VAR2 = Want
 {
@@ -1454,7 +2065,6 @@ if VAR2 = Want
 			LV_Add("","? Want to Change Skin? Hospital")
 		return
 	}
-
 	if VAR4 = Learn
 	{
 		if ENABLE_DEBUG_HELP = 1
@@ -1475,6 +2085,10 @@ if VAR2 = Want
 	}
 }
 
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; Welcome ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+
 if VAR2 = Welcome
 {
 	if VAR8 = Version
@@ -1484,6 +2098,27 @@ if VAR2 = Welcome
 			LV_Add("", "# Server Version " VAR9)
 		if LOTTOPLAYED = 0
 			gosub lotto
+		return
+	} ;
+	if VAR5 = Gym{FFFFFF}.
+	{	
+		IN_CH = 1
+		if ENABLE_DEBUG_HELP = 1
+			LV_Add("", "# Welcome To The Gym")
+		return
+	}
+	if VAR5 = Sex
+	{	
+		IN_CH = 1
+		if ENABLE_DEBUG_HELP = 1
+			LV_Add("", "# Welcome To The Sex Shop")
+		return
+	} ;
+	if VAR4 = {00AAFF}Redsands
+	{	
+		IN_CH = 1
+		if ENABLE_DEBUG_HELP = 1
+			LV_Add("", "# Welcome To Redsands Casino")
 		return
 	}
 	if VAR4 = {00AAFF}City
@@ -1499,11 +2134,17 @@ if VAR2 = Welcome
 			
 		LV_Add("","? Welcome To Xoomer " "Havefish " HAVEFISH " Auto Sell " AUTOFISHSELL)
 			sleep 200
-			SendInput {Shift}{Shift}
+			gosub SAMPDETECT
+			if GAME = 1
+				sendinput  {Shift}{Shift}
+			
+			if HAVE_FISH = 1
+			{
 			if AUTOFISHSHOW = 1
 				SetTimer, fsell , 1500
 			if AUTOFISHSELL = 1
 				SetTimer, fsellall , 1500
+			}
 		return
 	}
 	if VAR4 = {00AAFF}24/7
@@ -1511,12 +2152,16 @@ if VAR2 = Welcome
 		;if ENABLE_DEBUG_HELP = 1
 			LV_Add("","? Welcome To Xoomer " "Havefish " HAVEFISH " Auto Sell " AUTOFISHSELL)
 			sleep 200
-			SendInput {Shift}{Shift}
+			gosub SAMPDETECT
+			if GAME = 1
+				sendinput {Shift}{Shift}
+			if HAVE_FISH = 1
+			{
 			if AUTOFISHSHOW = 1
 				SetTimer, fsell , 1500
 			if AUTOFISHSELL = 1
 				SetTimer, fsellall , 1500
-		
+			}
 		return
 	}
 	if VAR4 = {00AAFF}Well
@@ -1524,40 +2169,57 @@ if VAR2 = Welcome
 		;if ENABLE_DEBUG_HELP = 1
 			LV_Add("","? Welcome Well Stacked Pizza " "Havefish " HAVEFISH " Auto Sell " AUTOFISHSELL)
 			sleep 200
-			SendInput {Shift}{Shift}
+			gosub SAMPDETECT
+			if GAME = 1
+				sendinput {Shift}{Shift}
+			if HAVE_FISH = 1
+			{
 			if AUTOFISHSHOW = 1
 				SetTimer, fsell , 1500
 			if AUTOFISHSELL = 1
 				SetTimer, fsellall , 1500
-		
+			}
 		return
 	}
 	if VAR4 = {00AAFF}Burger
 	{
 		;if ENABLE_DEBUG_HELP = 1
 			LV_Add("","? Welcome To Burger Shot " "Havefish " HAVEFISH " Auto Sell " AUTOFISHSELL)
-		SendInput {Shift}
+			Sleep 200
+			gosub SAMPDETECT
+			if GAME = 1
+				sendinput {Shift}{Shift}
+			if HAVE_FISH = 1
+			{
 			if AUTOFISHSHOW = 1
 				SetTimer, fsell , 3000
 			if AUTOFISHSELL = 1
 				SetTimer, fsellall , 3000
+			}
 		return
 	}
 	if VAR4 = {00AAFF}Cluckin'
 	{
 		;if ENABLE_DEBUG_HELP = 1
 			LV_Add("","? Welcome To Clucking Bell " "Havefish " HAVEFISH " Auto Sell " AUTOFISHSELL)
-		
-		
-			SendInput {Shift}
+			Sleep 200
+			gosub SAMPDETECT
+			if GAME = 1
+				sendinput {Shift}{Shift}
+			if HAVE_FISH = 1
+			{
 			if AUTOFISHSHOW = 1
 				SetTimer, fsell , 2000
 			if AUTOFISHSELL = 1
 				SetTimer, fsellall , 2000
-		
+			}
 		return
 	}
 }
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; Visit ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
 
 if VAR2 = Visit
 {
@@ -1593,39 +2255,10 @@ if VAR2 = Visit
 	}
 }
 
-if VAR3 = Sponsored
-{
-	if ENABLE_DEBUG_HELP = 1
-		LV_Add("","? Sponsored " ADDLINE)
-	return
-}
-if VAR3 = Condoms
-{
-	if ENABLE_DEBUG_HELP = 1
-		LV_Add("","? Buy Condoms")
-	return
-}
-if VAR2 = Confused?
-{
-	if ENABLE_DEBUG_HELP = 1
-		LV_Add("","? Confused?")
-	return
-}
-if VAR2 = Feeling
-{
-	if VAR3 = Hungry
-	{
-		if ENABLE_DEBUG_HELP = 1
-			LV_Add("","? Feeling Hungry Or Thirsty? /food")
-		return
-	}
-}
-if VAR2 = Find 
-{
-	if ENABLE_DEBUG_HELP = 1
-		LV_Add("","? Find It Before Any One Else")
-	return
-}
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; Free ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+
 if VAR2 = FREE
 {
 	if VAR3 = Skydiving
@@ -1647,18 +2280,154 @@ if VAR2 = FREE
 		return
 	}
 }
+
+
+if VAR2 = All
+{
+	if VAR3 = Race
+	{
+		if ENABLE_DEBUG_HELP = 1
+			LV_Add("", " ? Free Races /challenge")
+		return
+	}
+}
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; help ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+
+if (VAR2 = "I" and VAR3 = "Fell")
+{
+	if ENABLE_DEBUG_HELP = 1
+		LV_Add("", "# HELP I can Fell It Coming")
+	return
+}
+
+if (VAR2 = "Feeling" and VAR3 = "Hungry")
+{
+	if ENABLE_DEBUG_HELP = 1
+		LV_Add("","? Feeling Hungry Or Thirsty? /food")
+	return
+}
+
+if VAR2 = Para
+{
+	if ENABLE_DEBUG_HELP = 1
+		LV_Add("","? Para Bailar La Bamba")
+	return
+}
+
+if VAR2 = Lazy
+{
+	if ENABLE_DEBUG_HELP = 1
+		LV_Add("","? Lazy Bastard, Get A Job!")
+	return
+}
+
+if VAR2 = Get
+{
+	if ENABLE_DEBUG_HELP = 1
+		LV_Add("","? Get More Info www.crazybobs.net")
+	return
+}
+
+if VAR2 = Invest
+{
+	if ENABLE_DEBUG_HELP = 1
+		LV_Add("","? Invest in Stocks")
+	return
+}
+
+if VAR3 = Problems?
+{
+	if ENABLE_DEBUG_HELP = 1
+		LV_Add("","? Got Problems /weapons")
+	return
+}
+
+if VAR3 = Sweeper
+{
+	if ENABLE_DEBUG_HELP = 1
+		LV_Add("","? Street Sweepers Wanted")
+	return
+}
+
+if VAR2 = Illegal
+{
+	if ENABLE_DEBUG_HELP = 1
+		LV_Add("","? Illegal Immigrants Need A Ride To Their New Jobs! ")
+	return
+}
+
+if VAR2 = Spotted
+{
+	if ENABLE_DEBUG_HELP = 1
+		LV_Add("","? Spotted a Crime? /911.")
+	return
+}
+
+if VAR2 = Feel
+{
+	if ENABLE_DEBUG_HELP = 1
+		LV_Add("","? Feel Like Killing Someone?")
+	return
+}
+
+if VAR2 = Does
+{
+	if ENABLE_DEBUG_HELP = 1
+		LV_Add("","? Does It Burn When You Piss?")
+	return
+}
+
+if VAR2 = Minor
+{
+	if ENABLE_DEBUG_HELP = 1
+		LV_Add("","? Minor Crimes Are Only Reported If Police Officers Are Close Enough")
+	return
+}
+
+if VAR3 = Condoms
+{
+	if ENABLE_DEBUG_HELP = 1
+		LV_Add("","? Buy Condoms")
+	return
+}
+
+if VAR2 = Confused?
+{
+	if ENABLE_DEBUG_HELP = 1
+		LV_Add("","? Confused?")
+	return
+}
+
+if VAR2 = Find 
+{
+	if ENABLE_DEBUG_HELP = 1
+		LV_Add("","? Find It Before Any One Else")
+	return
+}
+
 if VAR2 = Donate
 {
 	if ENABLE_DEBUG_HELP = 1
 		LV_Add("","? Donate To Keep Servers Running")
 	return
 }
+
 if VAR2 = Donating
 {
 	if ENABLE_DEBUG_HELP = 1
 		LV_Add("","? Donating Players Pay Less Taxes")
 	return
 }
+
+if VAR3 = Sponsored
+{
+	if ENABLE_DEBUG_HELP = 1
+		LV_Add("","? Sponsored " ADDLINE)
+	return
+}
+
 if VAR4 = Sponsored
 {
 	if ENABLE_DEBUG_HELP = 1
@@ -1672,90 +2441,105 @@ if VAR4 = Cheater
 		LV_Add("","? /complain")
 	return
 }
+
 if VAR4 = /groupjoin
 {
 	if ENABLE_DEBUG_HELP = 1
 		LV_Add("","? /groupjoin")
 	return
 }
+
 if VAR4 = /shoplift
 {
 	if ENABLE_DEBUG_HELP = 1
 		LV_Add("","? /shoplift")
 	return
 }
+
 if VAR3 = /markets
 {
 	if ENABLE_DEBUG_HELP = 1
 		LV_Add("","? /markets")
 	return
 }
+
 if VAR4 = /gps
 {
 	if ENABLE_DEBUG_HELP = 1
 		LV_Add("","? /gps")
 	return
 }
+
 if VAR4 = /info
 {
 	if ENABLE_DEBUG_HELP = 1
 		LV_Add("","? /info")
 	return
 }
+
 if VAR3 = /driver
 {
 	if ENABLE_DEBUG_HELP = 1
 		LV_Add("","? /driver")
 	return
 }
+
 if VAR4 = /settings
 {
 	if ENABLE_DEBUG_HELP = 1
 		LV_Add("","? /settings")
 	return
 }
+
 if VAR4 = /pagesize
 {
 	if ENABLE_DEBUG_HELP = 1
 		LV_Add("","? /pagesize")
 	return
 }
+
 if VAR4 = /driver
 {
 	if ENABLE_DEBUG_HELP = 1
 		LV_Add("","? /driver")
 	return
 }
+
 if VAR4 = /challenge
 {
 	if ENABLE_DEBUG_HELP = 1
 		LV_Add("","? /challenge")
 	return
 }
+
 if VAR4 = /answer
 {
 	if ENABLE_DEBUG_HELP = 1
 		LV_Add("","? /answer")
 	return
 }
+
 if VAR4 = /shoplift
 {
 	if ENABLE_DEBUG_HELP = 1
 		LV_Add("","? /shoplift")
 	return
 }
+
 if VAR4 = /cs
 {
 	if ENABLE_DEBUG_HELP = 1
 		LV_Add("","? /cs")
 	return
 }
+
 if VAR4 = /inv
 {
 	if ENABLE_DEBUG_HELP = 1
 		LV_Add("","? /inv")
 	return
 }
+
 if VAR4 = /pay
 {
 	if ENABLE_DEBUG_HELP = 1
@@ -1763,54 +2547,63 @@ if VAR4 = /pay
 	SetTimer, pay , 1000
 	return
 }
+
 if VAR3 = /cnrradio
 {
 	if ENABLE_DEBUG_HELP = 1
 		LV_Add("","? /cnrradio")
 	return
 }
+
 if VAR4 = /citystats
 {
 	if ENABLE_DEBUG_HELP = 1
 		LV_Add("","? /citystats")
 	return
 }
+
 if VAR4 = /ups
 {
 	if ENABLE_DEBUG_HELP = 1
 		LV_Add("","? /ups")
 	return
 }
+
 if VAR3 = /crimes
 {
 	if ENABLE_DEBUG_HELP = 1
 		LV_Add("","? /crimes")
 	return
 }
+
 if VAR3 = /courier
 {
 	if ENABLE_DEBUG_HELP = 1
 		LV_Add("","? /courier")
 	return
 }
+
 if VAR4 = /cancelhit
 {
 	if ENABLE_DEBUG_HELP = 1
 		LV_Add("","? /cancelhit")
 	return
 }
+
 if VAR4 = /courier
 {
 	if ENABLE_DEBUG_HELP = 1
 		LV_Add("","? /courier")
 	return
 }
+
 if VAR4 = /tip
 {
 	if ENABLE_DEBUG_HELP = 1
 		LV_Add("","? /tip")
 	return
 }
+
 if VAR4 = {D6D631}/holdup
 {
 	if ENABLE_DEBUG_HELP = 1
@@ -1824,6 +2617,7 @@ if VAR4 = {D6D631}/citystats
 		LV_Add("", "? /citystats")
 	return
 }
+
 if VAR3 = {D6D631}/rod
 {
 	if ENABLE_DEBUG_HELP = 1
@@ -1831,6 +2625,7 @@ if VAR3 = {D6D631}/rod
 	HAVEROD = 1
 	return
 }
+
 if VAR3 = {D6D631}/freeze
 {
 	if ENABLE_DEBUG_HELP = 1
@@ -1838,54 +2633,42 @@ if VAR3 = {D6D631}/freeze
 	;settimer, pay, 1000
 	return
 }
+
 if VAR4 = {D6D631}/freeze
 {
 	if ENABLE_DEBUG_HELP = 1
 		LV_Add("", "? /freeze VAR4")
 	return
 }
+
 if VAR5 = {D6D631}/freeze
 {
 	if ENABLE_DEBUG_HELP = 1
 		LV_Add("", "? /freeze VAR5")
 	return
 }
+
 if VAR5 = {D6D631}/driver
 {
 	if ENABLE_DEBUG_HELP = 1
 		LV_Add("", "? /driver")
 	return
 }
+
 if VAR5 = {D6D631}/r
 {
 	if ENABLE_DEBUG_PM = 1
-		LV_Add("", "? /r " LASTPM)
+		;LV_Add("", "? /r " LASTPM)
 	return
 }
-if VAR4 = {D6D631}/vehhelp
-{
-	if ENABLE_DEBUG_HELP = 1
-		LV_Add("", "? /vehhelp " COLORN1 " " COLORN2)
-	INVECHILE = 1
-	IN_CH = 0
-	if DONATOR = 1
-		SetTimer, vehc , 500
-	return
-}	
-if VAR5 = {D6D631}/truckmsg
-{
-	INTRUCK = 1
-	INCAR = 0
-	if ENABLE_DEBUG_HELP = 1
-		LV_Add("", "? Trucking")
-	return
-}
+
 IfInString, VAR4 , /ignore
 {
 	if ENABLE_DEBUG_HELP = 1
 		LV_Add("", "? /ignored " VAR5)
 	return
 }
+
 if VAR5 = /cmds
 {
 	if ENABLE_DEBUG_HELP = 1
@@ -1898,6 +2681,31 @@ if VAR6 = Turn
 		LV_Add("", "? /aoff ")
 	return
 }
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; HELP ; HELP ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+
+if VAR4 = {D6D631}/vehhelp
+{
+	if ENABLE_DEBUG_HELP = 1
+		LV_Add("", "? /vehhelp " COLORN1 " " COLORN2)
+	INVECHILE = 1
+	IN_CH = 0
+	if DONATOR = 1
+		SetTimer, vehc , 500
+	return
+}	
+
+if VAR5 = {D6D631}/truckmsg
+{
+	INTRUCK = 1
+	INCAR = 0
+	if ENABLE_DEBUG_HELP = 1
+		LV_Add("", "? Trucking")
+	return
+}
+
 if VAR9 = /delivery
 {
 	INTRUCK = 1
@@ -1908,6 +2716,7 @@ if VAR9 = /delivery
 	SetTimer, vehc , 500
 	return
 }
+
 if VAR4 = /house
 {
 	{
@@ -1923,6 +2732,11 @@ if VAR4 = /house
 	return
 	}
 }
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; Only ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+
 if VAR6 = Only
 {
 	if VAR9 = Donating
@@ -1933,19 +2747,10 @@ if VAR6 = Only
 		return
 	}
 }
-if VAR5 = is
-{
-	if VAR7 = Far
-	{
-		if ENABLE_DEBUG_HELP = 1
-			LV_Add("","# " VAR2 " " VAR3 "Too Far Away " VAR10)
-		LASTDICEFAIL = 1
-		return
-		
-	}
-}
+
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; LOTTO ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
 
 if VAR2 = CrazyBob
 {
@@ -1957,6 +2762,7 @@ if VAR2 = CrazyBob
 	return
 	}
 }
+
 if VAR2 = Someone
 {
 	if VAR3 = has
@@ -1969,6 +2775,7 @@ if VAR2 = Someone
 		return
 	}
 }
+
 if VAR3 = Daily
 {
 	if ENABLE_DEBUG_LOTTO = 1
@@ -1976,6 +2783,7 @@ if VAR3 = Daily
 	LOTTOPLAYED = 0
 			return
 }
+
 if VAR2 = Pick
 	{
 		if ENABLE_DEBUG_LOTTO = 1
@@ -1999,6 +2807,7 @@ if VAR2 = Participation
 	LOTTOPLAYED = 0
 	return
 }
+
 if VAR2 = No
 {
 	if VAR3 = Winner
@@ -2011,6 +2820,7 @@ if VAR2 = No
 		
 	}
 }
+
 if VAR5 = /lotto
 {
 	if ENABLE_DEBUG_LOTTO = 1
@@ -2020,6 +2830,11 @@ if VAR5 = /lotto
 	Gosub lotto
 	return
 }
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; CNR ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+
 if VAR2 = CnR
 {
 	
@@ -2038,7 +2853,7 @@ if VAR2 = CnR
 	if VAR3 = Radio
 	{
 		if ENABLE_DEBUG_HELP = 1
-			LV_Add("","# Radio Off")
+			LV_Add("", "#  Radio Off")
 		ISRADIO = 0
 		return
 	}
@@ -2057,9 +2872,11 @@ if VAR2 = CnR
 		return
 	}
 }
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-; time: ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; Today's ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+
 if VAR2 = Today's
 {
 	if VAR3 = Number:
@@ -2072,7 +2889,7 @@ if VAR2 = Today's
 	if VAR4 = Vehicle:
 	{
 		
-		if ENABLE_DEBUG_WORK = 1
+		if ENABLE_DEBUG_BONUS = 1
 			LV_Add("", "# Bonus Car " VAR5 " " VAR6)
 		gosub bonuscar
 		return
@@ -2081,48 +2898,61 @@ if VAR2 = Today's
 	{
 		if VAR7 = Minimum
 		{
-			if ENABLE_DEBUG_WORK = 1
+			if ENABLE_DEBUG_BONUS = 1
 				LV_Add("", "# Bonus Fish " VAR4 " " VAR5)
 				gosub bonusfish
 			return
 		}
-	if ENABLE_DEBUG_WORK = 1
+	if ENABLE_DEBUG_BONUS = 1
 		LV_Add("", "# Bonus Fish " VAR6 " " VAR7)
 		gosub bonusfish
 		return
 	}
 }
 
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; Server Connect ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
 
 if VAR2 = {FF0000}Warning!
 {
 	if ENABLE_DEBUG_SERVER = 1
 		LV_Add("", "# Server Warning")
+	if ENABLE_CHATRAIN_DEBUG = 1
+			FileAppend, %ADDLINE%`n, chat.txt
 	if VAR4 = {FFFFFF}This
 		Gosub login
 	return
 }
+
 if VAR2 = Logged
 {
 	if ENABLE_DEBUG_SERVER = 1
 		LV_Add("", "# Server Login")
+	if ENABLE_CHATRAIN_DEBUG = 1
+			FileAppend, %ADDLINE%`n, chat.txt
 	IF VAR5 = {00AAFF}Donating
 		DONATOR = 1
 	LOTTOPLAYED = 0
 	return
 }
+
 if VAR4 ={0077FF}CrazyBob's
 {
 	if ENABLE_DEBUG_SERVER = 1
 		LV_Add("", "# Server Welcome")
+	if ENABLE_CHATRAIN_DEBUG = 1
+			FileAppend, %ADDLINE%`n, chat.txt
 	LOTTOPLAYED = 0
 	return
 }
+
 if VAR2 = Data
 {
 	if ENABLE_DEBUG_SERVER = 1
 		LV_Add("", "# Server Player Exists")
+	if ENABLE_CHATRAIN_DEBUG = 1
+			FileAppend, %ADDLINE%`n, chat.txt
 	LOGEDIN = Yes
 	LOTTOFAIL = 0
 	if LOTTOPLAYED = 0
@@ -2131,30 +2961,42 @@ if VAR2 = Data
 		gosub radio
 	return
 }
+
 if VAR2 = {FF66FF}THIS
 {
 	if ENABLE_DEBUG_SERVER = 1
-		LV_Add("","# Warning! This Server Contains Explicit Material.")
+		LV_Add("", "#  Warning! This Server Contains Explicit Material.")
+	if ENABLE_CHATRAIN_DEBUG = 1
+			FileAppend, %ADDLINE%`n, chat.txt
 	return
 }
+
 if VAR2 = Check
 {
 	if ENABLE_DEBUG_SERVER = 1
 		LV_Add("", "# Check " ADDLINE)
+	if ENABLE_CHATRAIN_DEBUG = 1
+			FileAppend, %ADDLINE%`n, chat.txt
 	return
 }
+
 if VAR2 = {FFFFFF}SA-MP
 {
 	StringTrimLeft, VAR3, SERVERVER, 10
 	if ENABLE_DEBUG_SERVER = 1
 		LV_Add("", "# SA-MP Started " SERVERVER)
+	if ENABLE_CHATRAIN_DEBUG = 1
+			FileAppend, %ADDLINE%`n, chat.txt
 	return
 }
+
 if VAR2 = Connecting
 {
 	StringTrimRight, VAR4, SERVERIP, 3
 	if ENABLE_DEBUG_SERVER = 1
 		LV_Add("", "# Connecting")
+	if ENABLE_CHATRAIN_DEBUG = 1
+			FileAppend, %ADDLINE%`n, chat.txt
 		if FPSINITAL = 0
 		{
 			gosub FPSHIGH
@@ -2162,30 +3004,45 @@ if VAR2 = Connecting
 		}
 	return
 }
+
 if VAR2 = Connected.
 {
-	
+    ISCONNECTED++
+	if ISCONNECTED = 1
+	{
+		gosub SAMPDETECT
+		if BORDERFIX = 1
+			sendinput, {ALT DOWN}{ENTER}{ALT UP}
+	}
 	if ENABLE_DEBUG_SERVER = 1
 		LV_Add("", "# Connected.")
+	if ENABLE_CHATRAIN_DEBUG = 1
+			FileAppend, %ADDLINE%`n, chat.txt
 	ISCRAZYBOBS = 0
 	return
 }
+
 if VAR2 = Connected
 {
 	StringTrimLeft, VAR3, SERVERNAME, 10
 	if ENABLE_DEBUG_SERVER = 1
 		LV_Add("", "# Server Connected" " " SERVERNAME " " VAR7)
+	if ENABLE_CHATRAIN_DEBUG = 1
+			FileAppend, %ADDLINE%`n, chat.txt
 	return
 }
+
 if VAR3 = Server
 {
 	if ENABLE_DEBUG_SERVER = 1
 		LV_Add("", "# The server is restarting..")
+	if ENABLE_CHATRAIN_DEBUG = 1
+			FileAppend, %ADDLINE%`n, chat.txt
 	return
 }
 
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; Dead ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; Death ; Insulted ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 if VAR6 = Insulted
 {
@@ -2197,9 +3054,14 @@ if VAR6 = Insulted
 			DEATHS = %DEATHS% %VAR2% %a_space%
 		IfNotInString , MURDERS , %VAR10%
 			MURDERS = %MURDERS% %VAR10% %a_space%
+		DEAD = %VAR2%
+		; settimer, deadgift, 5000
 	return
 	}
 }
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; Death ; Puked ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
 if VAR5 = Puked
 {
 	IfInString, VAR8 , Death
@@ -2211,6 +3073,9 @@ if VAR5 = Puked
 	return
 	}
 }
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; Death ; Shot ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
 if VAR6 = Shot
 {				
 	if ENABLE_DEBUG_DEAD = 1
@@ -2218,9 +3083,13 @@ if VAR6 = Shot
 		LV_Add("","!! Dead " VAR2 " " VAR3 " Has Been Shot For Being On Police Property")	
 		IfNotInString , DEATHS , %VAR2%
 			DEATHS = %DEATHS% %VAR2% %a_space%
+		DEAD = %VAR2%
+		; settimer, deadgift, 5000
 		return
 	}
 }
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; Death ; Attacked ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 if VAR6 = Attacked
 {
@@ -2232,9 +3101,16 @@ if VAR6 = Attacked
 			DEATHS = %DEATHS% %VAR2% %a_space%
 		IfNotInString , MURDERS , *SeaMonster
 			MURDERS = %MURDERS% *SeaMonster %a_space%
+		DEAD = %VAR2%
+		; settimer, deadgift, 5000
 		return
 	}	
 }
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; Death ; Killed ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+
 if VAR5 = killed
 {
 	if VAR7 = Sea
@@ -2243,28 +3119,25 @@ if VAR5 = killed
 			LV_Add("","!! Dead Sea Monster by " VAR2 " " VAR3 )
 		IfNotInString , DEATHS , %VAR2%
 			DEATHS = %DEATHS% %VAR2% %a_space%
+		DEAD = %VAR2%
+		; settimer, deadgift, 5000
 		return
 	}	
-	if VAR7 = Sea
-	{
-		if ENABLE_DEBUG_DEAD = 1
-			LV_Add("","!! Dead Mermaid by " VAR2 " " VAR3 )
-		IfNotInString , DEATHS , *Mermaid
-			DEATHS = %DEATHS% %VAR2% %a_space%
-		return
-	}	
-}
-if VAR5 = killed
-{
 	if VAR8 = Ton
 	{
 		if ENABLE_DEBUG_DEAD = 1
 			LV_Add("","!! Dead 5 Ton Whale by " VAR2 " " VAR3 )
 		IfNotInString , DEATHS , Whale
 			DEATHS = %DEATHS% Whale %a_space%
+			DEAD = %VAR2%
+		; settimer, deadgift, 5000
 		return
 	}
 }
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; Death ; Died ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
 
 if VAR4 = Died
 {
@@ -2272,8 +3145,12 @@ if VAR4 = Died
 		LV_Add("","!! Dead " VAR2 " " VAR3 " " VAR4 " " VAR5 " ???")
 		IfNotInString , DEATHS , %VAR2%
 			DEATHS = %DEATHS% %VAR2% %a_space%
+	
+			DEAD = %VAR2%
+		; settimer, deadgift, 5000
 	return
 }
+
 if VAR5 = Died
 {
 	if VAR6 = By
@@ -2284,6 +3161,8 @@ if VAR5 = Died
 			DEATHS = %DEATHS% %VAR2% %a_space%
 		IfNotInString , DEATHS , *HandOfGod
 			MURDERS = %MURDERS%  *HandOfGod %a_space%
+			DEAD = %VAR2%
+		; settimer, deadgift, 5000
 		return
 	}
 	if VAR6 = From
@@ -2292,6 +3171,8 @@ if VAR5 = Died
 			LV_Add("","!! Dead " VAR2 " " VAR3 " From " VAR7 " " VAR8 " " VAR9)
 		IfNotInString , DEATHS , %VAR2%
 			DEATHS = %DEATHS% %VAR2% %a_space%
+		DEAD = %VAR2%
+		; settimer, deadgift, 5000
 		return
 	}
 	if ENABLE_DEBUG_DEAD = 1
@@ -2300,8 +3181,11 @@ if VAR5 = Died
 		DEATHS = %DEATHS% %VAR2% %a_space%
 	IfNotInString , MURDERS , %VAR6%
 		MURDERS = %MURDERS% %VAR6% %a_space%
+		;DEAD = %VAR2%
+		;; settimer, deadgift, 5000
 	return
 }
+
 IfInString, VAR4 , Died
 {
 	if VAR6 = Killed
@@ -2312,14 +3196,22 @@ IfInString, VAR4 , Died
 			DEATHS = %DEATHS% %VAR2% %a_space%
 		IfNotInString , MURDERS , %VAR8%
 			MURDERS = %MURDERS% %VAR8% %a_space%
+		DEAD = %VAR2%
+		; settimer, deadgift, 5000
 		return
 	}
 	if ENABLE_DEBUG_DEAD = 1
 		LV_Add("","!! Dead " VAR2 " " VAR3 " " VAR4)
 		IfNotInString , DEATHS , %VAR2%
 			DEATHS = %DEATHS% %VAR2% %a_space%
+		DEAD = %VAR2%
+		; settimer, deadgift, 5000
 	return
 }
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; Death ; Death ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
 
 if VAR6 = Death
 {
@@ -2331,6 +3223,9 @@ if VAR6 = Death
 			DEATHS = %DEATHS% %VAR2% %a_space%
 		IfNotInString , MURDERS , %VAR11%
 			MURDERS = %MURDERS% %VAR11% %a_space%
+		
+		DEAD = %VAR2%
+		; settimer, deadgift, 5000
 		return
 	}
 	if ENABLE_DEBUG_DEAD = 1
@@ -2339,21 +3234,12 @@ if VAR6 = Death
 			DEATHS = %DEATHS% %VAR2% %a_space%
 		IfNotInString , MURDERS , %VAR10%
 			MURDERS = %MURDERS% %VAR10% %a_space%
+		
 	return
 }
 
-;;;;;;;;;;;;;;;;;;;;;; IS ;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-if VAR4 = Has
-{
-	if VAR8 = Gift!
-	{
-		if ENABLE_DEBUG = 1
-			LV_Add("","!! Gift From" VAR2 " " VAR3)
-		gosub gift
-		return	
-	}
-}
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; Is ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 
 if VAR4 = Is
@@ -2390,16 +3276,99 @@ if VAR4 = Is
 			LV_Add("","!! Sell " VAR2 " " VAR3)
 		return
 	}
-}		
+}	
+
+if VAR5 = is
+{
+	if VAR7 = Far
+	{
+		if ENABLE_DEBUG_HELP = 1
+			LV_Add("", "#  " VAR2 " " VAR3 "Too Far Away " VAR10)
+		LASTDICEFAIL = 1
+		return
+		
+	}
+}
+
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; You ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+
 if VAR2 = You
-{
+{ 
+	if (VAR5 = "Special" and VAR6 = "Clothing")
+		{
+			HOUSE_ENTER_NOKEY++
+			if ENABLE_DEBUG = 4
+				LV_Add("", "# Special Clothing Item! " VAR9 " " VAR10 " " VAR11 " " VAR12 ) ;You Found A Special Clothing Item! - Gift Head
+			return
+		}
+	if VAR4 = Not
+		if VAR7 = Invited
+		{
+			HOUSE_ENTER_NOKEY++
+			if ENABLE_DEBUG = 4
+				LV_Add("", "# No House Invite or Key" ) ;You Have Not Been Invited To This House And You Don't Have The Key.  You Cannot Enter.
+			return
+		}
+	if VAR4 = Not
+		if VAR7 = Clothes.
+		{
+			INV_CLOTHES_FORSALE = 0
+			if ENABLE_DEBUG = 4
+				LV_Add("", "# No Clothes for Sale" )  ;You Are Not Selling any Clothes.  Type  /clothesprices  To Set Your Clothes Prices.
+			return
+		}
+	if VAR5 = Another
+		if VAR6 = Condom.
+		{
+			INV_CONDOMS = 10
+			if ENABLE_DEBUG = 4
+				LV_Add("", "# Cannot Carry Another Condom" ) ; You Cannot Carry Another Condom.
+			return
+		}
+	if VAR4 = Receive
+		if VAR9 = Race.
+		{
+			HORSEBET_PALYED++
+			if ENABLE_DEBUG = 4
+				LV_Add("", "# Results After The Race" ) ;You Will Receive The {00AAFF}Results {FFFFFF}After The Race.
+			return
+		}	
+	if VAR7 = Gift
+		if VAR10 = Tree
+		{
+			GIFT_TREE_FAIL++
+			if ENABLE_DEBUG = 4
+				LV_Add("", "# No Gift From Tree" ) ;You Have Already Received A Gift From This Tree Today.
+			return
+		}	
+	if VAR6 = Gift
+		if VAR8 = Santa!
+		{
+			GIFT_SANTA++
+			if ENABLE_DEBUG = 4                  
+				LV_Add("", "# Gift From Santa!" ) ;You Have Received A Gift From Santa!  Merry Christmas!
+			return
+		}
+	if VAR6 = Gift
+		if VAR10 = Admins!
+		{
+			GIFT_ADMIN++
+			if ENABLE_DEBUG = 4
+				LV_Add("", "# Gift From The CnR Admins!" ) ; You Have Received A Gift From The CnR Admins!  Happy Holidays!
+			return
+		}
+	if VAR5 = {00AAFF}Gift	
+	{
+		if ENABLE_DEBUG = 4
+			LV_Add("", "# Gift Opened" ) ;You Opened Your {00AAFF}Gift {FFFFFF}And Found {00AAFF}5 GameDays of Free Health Insurance{FFFFFF}!
+		return
+	}
 	if VAR6 = Trash
 	{
 		if ENABLE_DEBUG_WORK = 1
-			LV_Add("", "# Work Trash Pickup " MISSION_TRASH )
+			LV_Add("", "# Work Trash Pickup" MISSION_TRASH )
 		MISSION_TRASH++
 		if MISSION_TRASH = 5
 			MISSION_TRASH = 0
@@ -2414,7 +3383,7 @@ if VAR2 = You
 	if VAR4 = Debt!
 	{
 		if ENABLE_DEBUG_MONEY = 1
-			LV_Add("", "# You Are In Debt! " VAR9)
+			LV_Add("", "# You Are In Debt!" VAR9)
 		return
 	}
 	if VAR4 = Activate
@@ -2423,7 +3392,6 @@ if VAR2 = You
 			LV_Add("", "# Cannot Activate the Alarm")
 		return
 	}
-	
 	if VAR5 = Throw
 	{
 		if ENABLE_DEBUG_HELP = 1
@@ -2603,7 +3571,6 @@ if VAR2 = You
 			LV_Add("", "# You Must Be in Checkpoint")
 		return
 	}
-
 	if VAR4 = Voted 
 	{
 		if ENABLE_DEBUG_WORK = 1
@@ -2694,126 +3661,118 @@ if VAR2 = You
 			SetTimer , pay , 1000
 		return
 	}
+	if VAR5 = Issued
+	{
+		if ENABLE_DEBUG_HELP = 1
+			LV_Add("", "% Crime Ticket Issued by " VAR10 " Fine: "VAR15)
+		IFCOP = 0
+			return
+		IFCIV = 1
+			SetTimer , pay , 1000
+		return
+	}
 	if VAR4 = Assisted
 	{
 		if ENABLE_DEBUG_HELP = 1
 			LV_Add("", "% Crime Assisted Arrest")
-		
 		return
 	}
 	if VAR7 = Assist
 	{
 		if ENABLE_DEBUG_HELP = 1
 			LV_Add("", "% Crime Assist Bonus " VAR5)
-		
 		return
 	}
 	if VAR4 = Accepted
 	{
 		if ENABLE_DEBUG_HELP = 1
 			LV_Add("", "% You Have Accepted")
-		
 		return
 	}
 	if VAR5 = Asked
 	{
 		if ENABLE_DEBUG_HELP = 1
 			LV_Add("", "% Crime " VAR3 " " VAR4 Asked to Freeze)
-		
 		return
 	}
 	if VAR4 = Offered
 	{
 		if ENABLE_DEBUG_HELP = 1
 			LV_Add("", "% " VAR2 " " VAR3 Has Offered)
-		
 		return
 	}
 	if VAR4 = Collected
 	{
 		if ENABLE_DEBUG_HELP = 1
 			LV_Add("", "% Crime Ticket Collected")
-		
 		return
 	}
 	if VAR4 = Paroled
 	{
 		if ENABLE_DEBUG_HELP = 1
 			LV_Add("", "% Crime " VAR5 " " VAR6 Paroled)
-		
 		return
 	}
 	if VAR3 = Beat
 	{
 		if ENABLE_DEBUG_HELP = 1
 			LV_Add("", "# You Beat Your Record")
-		
 		return
 	}
 	if VAR5 = Body
 	{
 		if ENABLE_DEBUG_HELP = 1
 			LV_Add("", "#  You Received Armor")
-		
 		return
 	}
 	if VAR4 = Arrested
 	{
 		if ENABLE_DEBUG_HELP = 1
 			LV_Add("", "% Arrest " VAR6 " " VAR7)
-		
 		return
 	}
 	if VAR5 = Withdraw
 	{
 		if ENABLE_DEBUG_HELP = 1
 			LV_Add("", "# Not at Bank ")
-		
 		return
 	}
 	if VAR5 = Deposit
 	{
 		if ENABLE_DEBUG_HELP = 1
 			LV_Add("", "# Not at Bank ")
-		
 		return
 	}
 	if VAR7 = Class
 	{
 		if ENABLE_DEBUG_HELP = 1
 			LV_Add("", "# New Class After Death ")
-		
 		return
 	}
 	if VAR4 = Found
 	{
 		if ENABLE_DEBUG_MONEYBAG = 1
 			LV_Add("", "# Found Money Bag ")
-		
 		return
 	}
 	if VAR3 = Received
 	{
 		if ENABLE_DEBUG_HELP = 1
 			LV_Add("", "# Share ")
-		
 		return
 	}
 	if VAR4 = Cannot
 	{
 		if ENABLE_DEBUG_HELP = 1
 			LV_Add("", "# You Cannot")
-		
 		return
 	}
 	if VAR4 = Paid
 	{
 		if ENABLE_DEBUG_HELP = 1
 			LV_Add("", "# You Have Paid")
-		
 		return
 	}
-	
 	if VAR3 = Lost.
 	{
 		if ENABLE_DEBUG_DICE = 1
@@ -2834,7 +3793,6 @@ if VAR2 = You
 			LV_Add("", "# You Have Cancelled")
 		return
 	}
-
 	if VAR5 = Ticket
 	{	
 		if ENABLE_DEBUG_HELP = 1
@@ -2890,16 +3848,17 @@ if VAR2 = You
 		return
 		}
 	}
-
 	IfInString, VAR9 , Fees
 	{				
 		if ENABLE_DEBUG_MONEY = 1
-		LV_Add("", "$ Paid Daily Life Insurance Fees " VAR4)			
+			LV_Add("", "$ Paid Daily Life Insurance Fees " VAR4)			
 		return
 	}
 }
 
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; Money ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
 
 if VAR5 = Stolen
 	if VAR8 = Bank
@@ -2918,6 +3877,7 @@ if VAR3 = Has
 		return
 	}
 }
+
 if VAR2 = Property
 {
 	if VAR3 = Value:
@@ -2934,6 +3894,7 @@ if VAR2 = Property
 		return
 	}
 }
+
 if VAR3 = Paid
 {
 	if VAR5 = Bank
@@ -2944,7 +3905,9 @@ if VAR3 = Paid
 	}
 }
 
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; Has ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
 
 if VAR4 = Has
 {
@@ -2952,31 +3915,31 @@ if VAR4 = Has
 	if VAR5 = Called
 	{
 			if ENABLE_DEBUG_GROUPMSG = 1
-				LV_Add("","# Group Call " VAR2 " " VAR3 " to "  VAR9 " " VAR10 " " VAR11 " " VAR12)
+				LV_Add("", "#  Group Call " VAR2 " " VAR3 " to "  VAR9 " " VAR10 " " VAR11 " " VAR12)
 			return
 	}
 	if VAR5 = Already
 	{
 			if ENABLE_DEBUG_GROUPMSG = 1
-				LV_Add("","# Group Already " VAR2 " " VAR3)
+				LV_Add("", "#  Group Already " VAR2 " " VAR3)
 			return
 	}
 	if VAR5 = Changed
 	{
 			if ENABLE_DEBUG_GROUPMSG = 1
-				LV_Add("","# Group Changed " VAR2 " " VAR3 " To " VAR8 " " VAR9 " " VAR10)
+				LV_Add("", "#  Group Changed " VAR2 " " VAR3 " To " VAR8 " " VAR9 " " VAR10)
 			return
 	}
 	if VAR5 = Requested
 	{
 			if ENABLE_DEBUG_GROUPMSG = 1
-				LV_Add("","# Group Request " VAR2 " " VAR3)
+				LV_Add("", "#  Group Request " VAR2 " " VAR3)
 			return
 	}	
 	if VAR5 = Kidnapped
 	{
 		if ENABLE_DEBUG_WORK = 1
-			LV_Add("","# Work Kidnap " VAR2 " " VAR3 " You " VAR8)
+			LV_Add("", "#  Work Kidnap " VAR2 " " VAR3 " You " VAR8)
 		return
 	}	
 	if VAR5 = Killed
@@ -2984,7 +3947,7 @@ if VAR4 = Has
 		if VAR6 = A
 		{
 			if ENABLE_DEBUG_HELP = 1
-				LV_Add("","# Dead Mermaid " VAR2 " " VAR3)
+				LV_Add("", "#  Dead Mermaid " VAR2 " " VAR3)
 			return
 		}
 	}
@@ -2993,14 +3956,14 @@ if VAR4 = Has
 		if VAR9 = Tip
 		{
 			if ENABLE_DEBUG_HELP = 1
-				LV_Add("","# Given Tip " VAR2 " " VAR3 " " VAR8)
+				LV_Add("", "#  Given Tip " VAR2 " " VAR3 " " VAR8)
 			
 			return
 		}
 		if VAR6 = You
 		{
 			if ENABLE_DEBUG_HELP = 1
-				LV_Add("","# Given Drugs " VAR2 " " VAR3 " " VAR7 "g")
+				LV_Add("", "#  Given Drugs " VAR2 " " VAR3 " " VAR7 "g")
 			
 			return
 		}
@@ -3010,7 +3973,7 @@ if VAR4 = Has
 		if VAR7 = A
 		{
 			if ENABLE_DEBUG_HELP = 1
-				LV_Add("","# Given Fish " VAR2 " " VAR3 " " VAR7 " Pound " VAR9 VAR10)
+				LV_Add("", "#  Given Fish " VAR2 " " VAR3 " " VAR7 " Pound " VAR9 VAR10)
 			return
 		}
 		if VAR6 = You
@@ -3027,7 +3990,7 @@ if VAR4 = Has
 		{
 			LASTDICEFAIL = 0
 			if ENABLE_DEBUG_DICE = 1
-				LV_Add("","# Dice Asked " VAR2 " " VAR3 " " VAR13 " " AUTOPLAYASKEDICE)
+				LV_Add("", "#  Dice Asked " VAR2 " " VAR3 " " VAR13 " " AUTOPLAYASKEDICE)
 			if AUTOPLAYASKEDICE = 1
 				gosub dice
 			return
@@ -3038,7 +4001,7 @@ if VAR4 = Has
 		if VAR8 = Paperboy
 		{
 			if ENABLE_DEBUG_WORK = 1
-				LV_Add("","# Work Record " VAR2 " " VAR3 " Paperboy " VAR11 " Delivered")
+				LV_Add("", "#  Work Record " VAR2 " " VAR3 " Paperboy " VAR11 " Delivered")
 			return
 		}
 	}
@@ -3047,13 +4010,13 @@ if VAR4 = Has
 		if VAR7 = Paperboy
 		{
 			if ENABLE_DEBUG_WORK = 1
-				LV_Add("","# Work Completed " VAR2 " " VAR3 " Paperboy " VAR10 " Delivered")
+				LV_Add("", "#  Work Completed " VAR2 " " VAR3 " Paperboy " VAR10 " Delivered")
 			return
 		}
 		if VAR7 = Pick
 		{
 			if ENABLE_DEBUG_WORK = 1
-				LV_Add("","# Work Completed " VAR2 " " VAR3 " Pick Pocket " VAR13 " Robbed")
+				LV_Add("", "#  Work Completed " VAR2 " " VAR3 " Pick Pocket " VAR13 " Robbed")
 			return
 		}
 	}
@@ -3063,19 +4026,19 @@ if VAR4 = Has
 		if VAR6 = Invited
 		{
 			if ENABLE_DEBUG_GROUPMSG = 1
-				LV_Add("","# Group Invite " VAR2 " " VAR3)
+				LV_Add("", "#  Group Invite " VAR2 " " VAR3)
 			return
 		}
 		if VAR9 = Crab
 		{
 			if ENABLE_DEBUG_DEAD = 1
-				LV_Add("","# Dead " VAR2 " " VAR3 " By Crabs")
+				LV_Add("", "#  Dead " VAR2 " " VAR3 " By Crabs")
 			return
 		}
 		if VAR8 = Freeze
 		{
 			if ENABLE_DEBUG_CRIME = 1
-				LV_Add("","# Crime " VAR2 " " VAR3 " Asked To Freeze")
+				LV_Add("", "#  Crime " VAR2 " " VAR3 " Asked To Freeze")
 			return
 		}
 	}
@@ -3084,90 +4047,89 @@ if VAR4 = Has
 		if VAR7 = Hit
 		{
 			if ENABLE_DEBUG_WORK = 1
-				LV_Add("","# Work Completed Hit " VAR2 " " VAR3 " On " VAR9 " " VAR10 " For " VAR12)
+				LV_Add("", "#  Work Completed Hit " VAR2 " " VAR3 " On " VAR9 " " VAR10 " For " VAR12)
 			return
 		}		if VAR7 = Food
 		{
 			if ENABLE_DEBUG_WORK = 1
-				LV_Add("","# Work Completed Food " VAR2 " " VAR3)
+				LV_Add("", "#  Work Completed Food " VAR2 " " VAR3)
 			return
 		}
 		if VAR7 = Lawn
 		{
 			if ENABLE_DEBUG_WORK = 1
-				LV_Add("","# Work Completed Lawn " VAR2 " " VAR3 " " VAR11)
+				LV_Add("", "#  Work Completed Lawn " VAR2 " " VAR3 " " VAR11)
 			return
 		}
 		if VAR7 = Sexual
 		{
 			if ENABLE_DEBUG_WORK = 1
-				LV_Add("","# Work Completed Sexual " VAR2 " " VAR3)
+				LV_Add("", "#  Work Completed Sexual " VAR2 " " VAR3)
 			return
 		}
 		if VAR7 = Pickpocket
 		{
 			if ENABLE_DEBUG_WORK = 1
-				LV_Add("","# Work Completed Pickpocket " VAR2 " " VAR3 " " VAR12 " " VAR15)
+				LV_Add("", "#  Work Completed Pickpocket " VAR2 " " VAR3 " " VAR12 " " VAR15)
 			return
 		}
 	}	
-	
 	if VAR5 = Raped
 	{
 		if ENABLE_DEBUG_WORK = 1
-			LV_Add("","# Work Rape " VAR2 " " VAR3 " You")
+			LV_Add("", "#  Work Rape " VAR2 " " VAR3 " You")
 		return
 	}
 	if VAR5 = Infected
 	{
 		if ENABLE_DEBUG_WORK = 1
-			LV_Add("","# Work Infected " VAR2 " " VAR3 " You")
+			LV_Add("", "#  Work Infected " VAR2 " " VAR3 " You")
 		return
 	}
 	if VAR5 = Robbed
 	{
 		if ENABLE_DEBUG_WORK = 1
-			LV_Add("","# Work Robbed " VAR2 " " VAR3 " You")
+			LV_Add("", "#  Work Robbed " VAR2 " " VAR3 " You")
 		return
 	}
 	
 	if VAR7 = Rape
 	{
 		if ENABLE_DEBUG_WORK = 1
-			LV_Add("","# Work Rape " VAR2 " " VAR3 " Attempt")
+			LV_Add("", "#  Work Rape " VAR2 " " VAR3 " Attempt")
 		return
 	}
 	if VAR7 = Rob
 	{
 		if ENABLE_DEBUG_WORK = 1
-			LV_Add("","# Work Rob " VAR2 " " VAR3 " Attempt")
+			LV_Add("", "#  Work Rob " VAR2 " " VAR3 " Attempt")
 		return
 	}
 
 	if VAR5 = Found
 	{
 		if ENABLE_DEBUG_MONEYBAG = 1
-			LV_Add("","# Moneybag " VAR2 " " VAR3 " Dropped By " VAR11 " " VAR12 " in " VAR14 " " VAR15 " " VAR16)
+			LV_Add("", "#  Moneybag " VAR2 " " VAR3 " Dropped By " VAR11 " " VAR12 " in " VAR14 " " VAR15 " " VAR16)
 		return
 	}
 	
 	if VAR5 = Invited
 	{
 		if ENABLE_DEBUG_MSG = 1
-			LV_Add("","# Group " VAR2 " " VAR3 " Invited To " VAR7 " " VAR8 " " VAR9)
+			LV_Add("", "#  Group " VAR2 " " VAR3 " Invited To " VAR7 " " VAR8 " " VAR9)
 		return
 	}
 
 	if VAR5 = Lived
 	{
 		if ENABLE_DEBUG_WORK = 1
-			LV_Add("","# Birthday " VAR2 " " VAR3 " Lived " VAR6 " Days " VAR11 " Years")
+			LV_Add("", "#  Birthday " VAR2 " " VAR3 " Lived " VAR6 " Days " VAR11 " Years")
 		return
 	}
 	if VAR5 = Offered
 	{
 		if ENABLE_DEBUG_VENDOR = 1
-			LV_Add("","# Vendor Offered " VAR2 " " VAR3 " " VAR4 " " VAR5 " " VAR6)
+			LV_Add("", "#  Vendor Offered " VAR2 " " VAR3 " " VAR4 " " VAR5 " " VAR6)
 		IfNotInString , WORKERS , %VAR2%
 			WORKERS = %WORKERS% %VAR2% %a_space%
 		return
@@ -3179,7 +4141,7 @@ if VAR4 = Has
 			if VAR10 = and
 				VAR10 =
 			if ENABLE_DEBUG_WORK = 1
-				LV_Add("","# Fishing Record " VAR2 " " VAR3 " Caught " VAR7 " " VAR9 " " VAR10)
+				LV_Add("", "#  Fishing Record " VAR2 " " VAR3 " Caught " VAR7 " " VAR9 " " VAR10)
 			IfNotInString , WORKERS , %VAR2%
 				WORKERS = %WORKERS% %VAR2% %a_space%
 			return
@@ -3189,7 +4151,7 @@ if VAR4 = Has
 			if VAR10 = and
 				VAR10 =
 			if ENABLE_DEBUG_WORK = 1
-				LV_Add("","# Fishing Record " VAR2 " " VAR3 " Caught " VAR7 " " VAR9 " " VAR10)
+				LV_Add("", "#  Fishing Record " VAR2 " " VAR3 " Caught " VAR7 " " VAR9 " " VAR10)
 			IfNotInString , WORKERS , %VAR2%
 				WORKERS = %WORKERS% %VAR2% %a_space%
 			return
@@ -3198,7 +4160,7 @@ if VAR4 = Has
 	if VAR7 = Keys
 	{
 		if ENABLE_DEBUG_HELP = 1
-			LV_Add("","# Vehicle Keys " VAR2 " " VAR3 " " VAR11)
+			LV_Add("", "#  Vehicle Keys " VAR2 " " VAR3 " " VAR11)
 		IfNotInString , WORKERS , %VAR2%
 			WORKERS = %WORKERS% %VAR2% %a_space%
 		return
@@ -3206,7 +4168,7 @@ if VAR4 = Has
 	if VAR8 = Vehicle
 	{
 		if ENABLE_DEBUG_WORK = 1
-			LV_Add("","# Bonus Vehicle " VAR2 " " VAR3 " Sold " VAR9 " For " VAR11)
+			LV_Add("", "#  Bonus Vehicle " VAR2 " " VAR3 " Sold " VAR9 " For " VAR11)
 		IfNotInString , WORKERS , %VAR2%
 			WORKERS = %WORKERS% %VAR2% %a_space%
 		return
@@ -3214,7 +4176,7 @@ if VAR4 = Has
 	if VAR8 = Mafia
 	{
 		if ENABLE_DEBUG_WORK = 1
-			LV_Add("","# Mafia Money " VAR2 " " VAR3 " Found " VAR12 " in " VAR14 " " VAR15 " " VAR16 " " VAR17)
+			LV_Add("", "#  Mafia Money " VAR2 " " VAR3 " Found " VAR12 " in " VAR14 " " VAR15 " " VAR16 " " VAR17)
 		IfNotInString , WORKERS , %VAR2%
 			WORKERS = %WORKERS% %VAR2% %a_space%
 		return
@@ -3222,7 +4184,7 @@ if VAR4 = Has
 	if VAR7 = Flower
 	{
 		if ENABLE_DEBUG_WORK = 1
-			LV_Add("","# Work Flowers " VAR2 " " VAR3 " Completed")
+			LV_Add("", "#  Work Flowers " VAR2 " " VAR3 " Completed")
 		IfNotInString , WORKERS , %VAR2%
 			WORKERS = %WORKERS% %VAR2% %a_space%
 		return
@@ -3230,7 +4192,7 @@ if VAR4 = Has
 	if VAR5 = Donated 
 	{
 		if ENABLE_DEBUG_WORK = 1
-			LV_Add("","# Work Church " VAR2 " " VAR3 " Donated " VAR6)
+			LV_Add("", "#  Work Church " VAR2 " " VAR3 " Donated " VAR6)
 		IfNotInString , WORKERS , %VAR2%
 			WORKERS = %WORKERS% %VAR2% %a_space%
 		return
@@ -3238,7 +4200,7 @@ if VAR4 = Has
 	if VAR7 = Vehicle
 	{
 		if ENABLE_DEBUG_WORK = 1
-			LV_Add("","# Bonus Vehicle " VAR2 " " VAR3 " Sold " VAR9)
+			LV_Add("", "#  Bonus Vehicle " VAR2 " " VAR3 " Sold " VAR9)
 		IfNotInString , WORKERS , %VAR2%
 			WORKERS = %WORKERS% %VAR2% %a_space%
 		return
@@ -3247,7 +4209,7 @@ if VAR4 = Has
 	if VAR5 = Cancelled
 	{
 		if ENABLE_DEBUG_WORK = 1
-			LV_Add("","# Hit Cancelled " VAR2 " " VAR3 " On  " VAR9)
+			LV_Add("", "#  Hit Cancelled " VAR2 " " VAR3 " On  " VAR9)
 		IfNotInString , WORKERS , %VAR2%
 			WORKERS = %WORKERS% %VAR2% %a_space%
 		return
@@ -3255,7 +4217,7 @@ if VAR4 = Has
 	if VAR7 = Package
 	{
 		if ENABLE_DEBUG_WORK = 1
-			LV_Add("","# Ups Package " VAR2 " " VAR3 " Received " VAR9 " " VAR10 " " VAR12 " " VAR13)
+			LV_Add("", "#  Ups Package " VAR2 " " VAR3 " Received " VAR9 " " VAR10 " " VAR12 " " VAR13)
 		IfNotInString , WORKERS , %VAR2%
 			WORKERS = %WORKERS% %VAR2% %a_space%
 		return
@@ -3263,7 +4225,7 @@ if VAR4 = Has
 	if VAR5 = Paid
 	{
 		if ENABLE_DEBUG_MONEY = 1
-			LV_Add("","# Taxed " VAR2 " " VAR3 " Paid " VAR6)
+			LV_Add("", "#  Taxed " VAR2 " " VAR3 " Paid " VAR6)
 		IfNotInString , REFUNDED , %VAR2%
 			REFUNDED = %REFUNDED% %VAR2% %a_space%
 		return
@@ -3271,7 +4233,7 @@ if VAR4 = Has
 	IfInString, VAR9 , Refund
 	{
 		if ENABLE_DEBUG_MONEY = 1
-			LV_Add("","# Refund " VAR2 " " VAR3 " Got " VAR6)
+			LV_Add("", "#  Refund " VAR2 " " VAR3 " Got " VAR6)
 		IfNotInString , WORKER , %VAR2%
 			WORKER = %WORKER% %VAR2% %a_space%
 		return
@@ -3279,7 +4241,7 @@ if VAR4 = Has
 	IfInString, VAR9 , Bank
 	{
 		if ENABLE_DEBUG_WORK = 1
-			LV_Add("","# Robbed Bank " VAR2 " " VAR3 " Paid " VAR6)
+			LV_Add("", "#  Robbed Bank " VAR2 " " VAR3 " Paid " VAR6)
 		IfNotInString , WORKER , %VAR2%
 			WORKER = %WORKER% %VAR2% %a_space%
 		return
@@ -3287,7 +4249,7 @@ if VAR4 = Has
 	if VAR5 = Robbed
 	{
 		if ENABLE_DEBUG_WORK = 1
-			LV_Add("","# Robbed " VAR2 " " VAR3 " " VAR6)
+			LV_Add("", "#  Robbed " VAR2 " " VAR3 " " VAR6)
 		IfNotInString , WORKERS , %VAR2%
 			WORKERS = %WORKERS% %VAR2% %a_space%
 		return
@@ -3295,7 +4257,7 @@ if VAR4 = Has
 	if VAR5 = Delivered
 	{
 		if ENABLE_DEBUG_WORK = 1
-			LV_Add("","# Delivered " VAR2 " " VAR3 " " VAR6 " " VAR7 " " VAR8)
+			LV_Add("", "#  Delivered " VAR2 " " VAR3 " " VAR6 " " VAR7 " " VAR8)
 		IfNotInString , WORKERS , %VAR2%
 			WORKERS = %WORKERS% %VAR2% %a_space%
 		return
@@ -3303,7 +4265,7 @@ if VAR4 = Has
 	if VAR7 = Trash
 	{
 		if ENABLE_DEBUG_WORK = 1
-			LV_Add("","# Trash " VAR2 " " VAR3 " " VAR6)
+			LV_Add("", "#  Trash " VAR2 " " VAR3 " " VAR6)
 		IfNotInString , WORKERS , %VAR2%
 			WORKERS = %WORKERS% %VAR2% %a_space%
 		return
@@ -3311,7 +4273,7 @@ if VAR4 = Has
 	if VAR7 = Drug
 	{
 		if ENABLE_DEBUG_WORK = 1
-			LV_Add("","# Drug " VAR2 " " VAR3 " " VAR6)
+			LV_Add("", "#  Drug " VAR2 " " VAR3 " " VAR6)
 		IfNotInString , WORKERS , %VAR2%
 			WORKERS = %WORKERS% %VAR2% %a_space%
 		return
@@ -3319,7 +4281,7 @@ if VAR4 = Has
 	if VAR6 = Delivered
 	{
 		if ENABLE_DEBUG_WORK = 1
-			LV_Add("","# Delivered " VAR2 " " VAR3 " " VAR6)
+			LV_Add("", "#  Delivered " VAR2 " " VAR3 " " VAR6)
 		IfNotInString , WORKERS , %VAR2%
 			WORKERS = %WORKERS% %VAR2% %a_space%
 		return
@@ -3327,41 +4289,58 @@ if VAR4 = Has
 	if VAR7 = Welfare
 	{
 		if ENABLE_DEBUG_WELFARE = 1
-			LV_Add("","# Welfare " VAR2 " " VAR3 " Is Poor")
+			LV_Add("", "#  Welfare " VAR2 " " VAR3 " Is Poor")
 		IfNotInString , POOR , %VAR2%
 			POOR = %POOR% %VAR2% %a_space%
 		return
 	}
 	if VAR8 = Taxes.
 	{
-		if ENABLE_DEBUG_TAXES = 1
-			LV_Add("","# Taxes " VAR2 " " VAR3 " Paid " VAR6)
+		if ENABLE_DEBUG_MONEY = 1
+			LV_Add("", "#  Taxes " VAR2 " " VAR3 " Paid " VAR6)
 		IfNotInString , TAXES , %VAR2%
-			DEATHS = %TAXES% %VAR2% %a_space%
+			TAXES = %TAXES% %VAR2% %a_space%
 		return
 	}
 	if VAR8 = Taxes,
 	{
-		if ENABLE_DEBUG_TAXES = 1
-			LV_Add("","# Taxes " VAR2 " " VAR3 " Failed to Paid ")
+		if ENABLE_DEBUG_MONEY = 1
+			LV_Add("", "#  Taxes " VAR2 " " VAR3 " Failed to Paid ")
 		IfNotInString , TAXES , %VAR2%
-			DEATHS = %TAXES% %VAR2% %a_space%
+			TAXES = %TAXES% %VAR2% %a_space%
 		return
 	}
 	if VAR6 = Shot
 	{
 		if ENABLE_DEBUG_DEAD = 1
-			LV_Add("","# Dead " VAR2 " " VAR3 " Shot on Police Property")
+			LV_Add("", "#  Dead " VAR2 " " VAR3 " Stabbed By " VAR10 " " VAR11) ; Jor_Zelis (146) Has Been Stabbed To Death By Coydz (50).
 		IfNotInString , DEATHS , %VAR2%
 			DEATHS = %DEATHS% %VAR2% %a_space%
+		IfNotInString , MURDERS , %VAR10%
+			MURDERS = %MURDERS% %VAR10% %a_space%
+		DEAD = %VAR2%
+		; settimer, deadgift, 5000
 		return
 	}
+	if VAR6 = Shot
+	{
+		if ENABLE_DEBUG_DEAD = 1
+			LV_Add("", "#  Dead " VAR2 " " VAR3 " Shot on Police Property")
+		IfNotInString , DEATHS , %VAR2%
+			DEATHS = %DEATHS% %VAR2% %a_space%
+		DEAD = %VAR2%
+		; settimer, deadgift, 5000
+		return
+	}
+	
 	if VAR5 = Disappeared
 	{
 		if ENABLE_DEBUG_DEAD = 1
-			LV_Add("","# Dead " VAR2 " " VAR3 " Has Disappeared in the Woods")
+			LV_Add("", "#  Dead " VAR2 " " VAR3 " Has Disappeared in the Woods")
 		IfNotInString , DEATHS , %VAR2%
 			DEATHS = %DEATHS% %VAR2% %a_space%
+		DEAD = %VAR2%
+		; settimer, deadgift, 5000
 		return
 	}
 	if VAR5 = Robbed
@@ -3369,7 +4348,7 @@ if VAR4 = Has
 		if VAR8 = You.
 		{
 			if ENABLE_DEBUG_ROBBER = 1
-				LV_Add("","# Robbed " VAR2 " " VAR3 " From you " VAR6)
+				LV_Add("", "#  Robbed " VAR2 " " VAR3 " From you " VAR6)
 			IfNotInString , ROBBERS , %VAR2%
 				ROBBERS = %ROBBERS% %VAR2% %a_space%
 			return
@@ -3397,6 +4376,8 @@ if VAR4 = Has
 			LV_Add("","!! Dead " VAR2 " " VAR3 " Tickled By Ghost") 
 		IfNotInString , DEATHS , %VAR2%
 			DEATHS = %DEATHS% %VAR2% %a_space%
+		DEAD = %VAR2%
+		; settimer, deadgift, 5000
 		return
 	}
 	If VAR6 = Clucked
@@ -3405,6 +4386,8 @@ if VAR4 = Has
 			LV_Add("","!! Dead " VAR2 " " VAR3 " Clucked by Chicken") 
 		IfNotInString , DEATHS , %VAR2%
 			DEATHS = %DEATHS% %VAR2% %a_space%
+		DEAD = %VAR2%
+		; settimer, deadgift, 5000
 		return
 	}
 	IfInString , VAR6 , Kidnapped
@@ -3437,6 +4420,8 @@ if VAR4 = Has
 			DEATHS = %DEATHS% %VAR2% %a_space%
 		IfNotInString , MURDERS , %VAR10%
 			MURDERS = %MURDERS% %VAR10% %a_space%
+		DEAD = %VAR2%
+		; settimer, deadgift, 5000
 		return
 	}
 	if VAR6 = Probed
@@ -3445,6 +4430,8 @@ if VAR4 = Has
 			LV_Add("","!! Dead " VAR2 " " VAR3 " Probed")
 		IfNotInString , DEATHS , %VAR2%
 			DEATHS = %DEATHS% %VAR2% %a_space%
+		DEAD = %VAR2%
+		; settimer, deadgift, 5000
 		return
 	}
 	if VAR9 = Death
@@ -3465,6 +4452,8 @@ if VAR4 = Has
 			DEATHS = %DEATHS% %VAR2% %a_space%
 		IfNotInString , MURDERS , *Jaws
 			MURDERS = %MURDERS% *Jaws %a_space%
+		DEAD = %VAR2%
+		; settimer, deadgift, 5000
 		return
 	}
 	if VAR5 = Shot
@@ -3473,6 +4462,8 @@ if VAR4 = Has
 			LV_Add("","!! Dead " VAR2 " " VAR3 " Shot on Police Property")
 		IfNotInString , DEATHS , %VAR2%
 			DEATHS = %DEATHS% %VAR2% %a_space%
+		DEAD = %VAR2%
+		; settimer, deadgift, 5000
 		return
 	}
 	if VAR11 = Record
@@ -3481,7 +4472,7 @@ if VAR4 = Has
 			LV_Add("","!! Work Record " VAR2 " " VAR3 " " VAR4 " " VAR5 " " VAR6 " " VAR7 " " VAR8 " " VAR9)
 		IfNotInString , WORKERS , %VAR2%
 			WORKERS = %WORKERS% %VAR2% %a_space%
-				return
+		return
 	}
 	if VAR8 = Lawn
 	{
@@ -3489,25 +4480,31 @@ if VAR4 = Has
 			LV_Add("","!! Work Lawn " VAR2 " " VAR3 " " VAR4 " " VAR5 " " VAR6 " " VAR7 " " VAR8 " " VAR9)
 		IfNotInString , WORKERS , %VAR2%
 			WORKERS = %WORKERS% %VAR2% %a_space%
-				return
+		return
 	}
 	if VAR6 = Killed
 	{
 		if VAR8 = Hitman
 		{
-		if ENABLE_DEBUG_DEAD = 1
-			LV_Add("","!! Work Hitman " VAR9 " " VAR10 " Killed " VAR2 " " VAR3)
-		IfNotInString , WORKERS , %VAR9%
-			WORKERS = %WORKERS% %VAR9% %a_space%
-				return
+			if ENABLE_DEBUG_DEAD = 1
+				LV_Add("","!! Work Hitman " VAR9 " " VAR10 " Killed " VAR2 " " VAR3)
+			IfNotInString , WORKERS , %VAR9%
+				WORKERS = %WORKERS% %VAR9% %a_space%
+			return
 		}
-		if ENABLE_DEBUG_DEAD = 1
-			LV_Add("","!! Dead " VAR2 " " VAR3 " Killed " VAR8 " " VAR9 " " VAR10 " " VAR11 " ***" )
-		IfNotInString , DEATHS , %VAR2%
-			DEATHS = %DEATHS% %VAR2% %a_space%
-		IfNotInString , MURDERS , %VAR8%
-			MURDERS = %MURDERS% %VAR8% %a_space%
-				return
+		/*
+		{
+			if ENABLE_DEBUG_DEAD = 1
+				LV_Add("","!! Dead " VAR2 " " VAR3 " Killed " VAR8 " " VAR9 " " VAR10 " " VAR11 " ***" )
+			IfNotInString , DEATHS , %VAR2%
+				DEATHS = %DEATHS% %VAR2% %a_space%
+			IfNotInString , MURDERS , %VAR8%
+				MURDERS = %MURDERS% %VAR8% %a_space%
+			DEAD = %VAR2%
+		; settimer, deadgift, 5000
+		return
+		}
+		*/
 	}
 	if VAR8 = Crop
 	{
@@ -3569,11 +4566,29 @@ if VAR4 = Has
 	}
 }
 
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; Your ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
 
 if VAR2 = Your
 {
-	
+	if VAR3 = Taxes
+	{
+		if VAR7 = Now
+		{
+			if ENABLE_DEBUG_MONEY = 1
+				LV_Add("", "# Taxes and Fees Will Now Be Paid From Your Bank") ;Your Taxes and Fees Will Now Be Paid From Your Bank Account First.
+			INV_TAX_BANK = 1
+			return
+		}
+		if VAR5 = No
+		{
+			if ENABLE_DEBUG_MONEY = 1
+				LV_Add("", "# Taxes and Fees Will No Longer Be Paid From Your Bank") ;Your Taxes and Fees Will No Longer Be Paid From Your Bank Account.
+			INV_TAX_BANK = 0
+			return
+		}
+	}
 	if VAR3 = Ticket
 	{
 		if VAR6 = Unpaid
@@ -3584,14 +4599,12 @@ if VAR2 = Your
 			return
 		}
 	}
-	
 	if VAR3 = House,
 	{
 		if VAR6 = During
 		{
 			if ENABLE_DEBUG_HOUSE = 1
 				LV_Add("", "!! Work House Been Cleaned")
-
 			return
 		}
 	}
@@ -3664,7 +4677,7 @@ if VAR2 = Your
 	if VAR3 = {00AAFF}User
 	{
 		if ENABLE_DEBUG_HELP = 1
-			LV_Add("","# Your User Has Been Saved")
+			LV_Add("", "#  Your User Has Been Saved")
 		LOGEDIN = YES
 		return
 	}
@@ -3708,15 +4721,19 @@ if VAR2 = Your
 	}
 }
 
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; Purchased ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
 
 if VAR2 = Purchased
 {
+	/*
 	{
 		if ENABLE_DEBUG_PURCHASE = 1
 			LV_Add("","$ Purchased" VAR4 " " VAR5 " " VAR6 " " VAR7 " " VAR8 " " VAR9 " " VAR10 " " VAR11)
 		return
 	}
+	*/
 	if VAR3 = Insurance
 	{
 		if ENABLE_DEBUG_PURCHASE = 1
@@ -3724,6 +4741,7 @@ if VAR2 = Purchased
 		return
 	}
 }
+
 if VAR4 = Purchased
 {						
 	if VAR5 = Your
@@ -3732,7 +4750,6 @@ if VAR4 = Purchased
 			LV_Add("", "Purchased Your Stuff ?")		
 		return
 	}		
-		
 	if VAR6 = Armor
 	{
 		if ENABLE_DEBUG_PURCHASE = 1
@@ -3745,19 +4762,14 @@ if VAR4 = Purchased
 			LV_Add("", "Purchased Dingy")	
 		return
 	}
-
-
-
-
-
-
 }
+
 if VAR2 = Street
 {
 	if VAR3 = Vendor 
 	{
 		if ENABLE_DEBUG_VENDOR = 1
-			LV_Add("","# Offer " VAR2 " " VAR3 " Items ")
+			LV_Add("", "#  Offer " VAR2 " " VAR3 " Items ")
 		if AUTTOACCEPTOFFER = 1
 		gosub items
 		return
@@ -3769,7 +4781,7 @@ if VAR2 = Arms
 	if VAR3 = Dealer
 	{
 		if ENABLE_DEBUG_VENDOR = 1
-			LV_Add("","# Offer " VAR2 " " VAR3 " Weapons ")
+			LV_Add("", "#  Offer " VAR2 " " VAR3 " Weapons ")
 		if AUTTOACCEPTOFFER = 1
 			gosub weapons
 		return
@@ -3781,21 +4793,25 @@ if VAR5 = Called
 	if VAR7 = Delivery
 	{
 		if ENABLE_DEBUG_VENDOR = 1
-			LV_Add("","# Celled Vendor " VAR2 " " VAR3 " " VAR11 " " VAR12 " " VAR13 " " VAR14 " " VAR15)
+			LV_Add("", "#  Celled Vendor " VAR2 " " VAR3 " " VAR11 " " VAR12 " " VAR13 " " VAR14 " " VAR15)
 		return
 	}	
 }
+
 if VAR2 = Food
 {
 	if VAR3 = Vendor
 	{
 		if ENABLE_DEBUG_VENDOR = 1
-			LV_Add("","# Vendor Offer Food " VAR4 " " VAR5)
+			LV_Add("", "#  Vendor Offer Food " VAR4 " " VAR5)
 		return
 	}	
 }
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; Dice ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; Dice ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+
 if VAR4 = Rolled
 {
 	if VAR5 = A
@@ -3811,6 +4827,7 @@ if VAR4 = Rolled
 		return
 	}
 }
+
 if VAR5 = Played
 {
 	if VAR6 = Dice
@@ -3827,6 +4844,7 @@ if VAR5 = Played
 		return
 	}
 }
+
 if VAR2 = No
 {	
 	if VAR3 = Winner,
@@ -3839,7 +4857,7 @@ if VAR2 = No
 	if VAR8 = Dice
 	{
 		if ENABLE_DEBUG_DICE = 1
-			LV_Add("","# Dice Failed")
+			LV_Add("", "#  Dice Failed")
 		LASTDICEFAIL = 0
 		return
 	}
@@ -3848,7 +4866,7 @@ if VAR2 = No
 		if VAR4 = Close
 		{
 			if ENABLE_DEBUG_DICE = 1
-				LV_Add("","# Dice No Players Close Enough 1")
+				LV_Add("", "#  Dice No Players Close Enough 1")
 			LASTDICEFAIL = 1
 			return
 		}
@@ -3856,11 +4874,12 @@ if VAR2 = No
 	if VAR7 = Enough.
 	{
 		if ENABLE_DEBUG_DICE = 1
-			LV_Add("","# Dice No Players Close Enough 2")
+			LV_Add("", "#  Dice No Players Close Enough 2")
 		LASTDICEFAIL = 1
 		return
 	}
 }
+
 if VAR2 = Law
 {
 	if VAR5 = Cannot
@@ -3871,16 +4890,18 @@ if VAR2 = Law
 		return
 	}
 }
+
 if VAR5 = Too
 {
 	if VAR6 = Far
 	{
 		if ENABLE_DEBUG_DICE = 1
-		LV_Add("","# Dice Player To Far Away" )
+		LV_Add("", "#  Dice Player To Far Away" )
 		LASTDICEFAIL = 0
 		return
 	}
 }
+
 if VAR4 = Could
 {
 	if VAR6 = Afford
@@ -3894,18 +4915,18 @@ if VAR4 = Could
 	}
 }
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; Crime ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; Crime ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
 
 if VAR2 = Jail
 {
 	if VAR4 = Appeal
 	{
 		if ENABLE_DEBUG_CRIME = 1
-			LV_Add("","# Appeal " VAR7 " " VAR8 " " VAR11)
+			LV_Add("", "#  Appeal " VAR7 " " VAR8 " " VAR11)
 		return
 	}		
 }
-
 
 if VAR9 = Police
 {
@@ -3913,15 +4934,17 @@ if VAR9 = Police
 		LV_Add("","% Crime Not Cop Car")
 	return
 }
+
 if VAR2 = Officer
 {
 	if VAR5 = Reports
 	{
 		if ENABLE_DEBUG_CRIME = 1
-			LV_Add("","# Crime" VAR2 " " VAR3 " Reports Criminal Activity " VAR12 " " VAR14 " " VAR15)
+			LV_Add("", "#  Crime" VAR2 " " VAR3 " Reports Criminal Activity " VAR12 " " VAR14 " " VAR15)
 		return
 	}		
 }
+
 if VAR2 = Level
 {
 	if VAR5 = Rank:
@@ -3931,12 +4954,14 @@ if VAR2 = Level
 		return
 	}
 }
- if VAR2 = Officer
+
+if VAR2 = Officer
 {
 	if ENABLE_DEBUG_CRIME = 1
 		LV_Add("","% Crime OFFICER " ADDLINE)
 	return
 }
+
 if VAR2 = Suspect
 {
 	if VAR7 = Enough
@@ -3954,18 +4979,21 @@ if VAR2 = Suspect
 	return
 
 }
+
 if VAR3 = Suspects
 {
 	if ENABLE_DEBUG_CRIME = 1
 		LV_Add("","% Crime No Suspect")
 	return
 }
+
 if VAR2 = Location:
 {
 	if ENABLE_DEBUG_CRIME = 1
 		LV_Add("","% Crime " VAR3 " " VAR4  " " VAR5 " " VAR6 " " VAR7 " " VAR8 " " VAR9  " " VAR10 )
 	return
 }
+
 if VAR2 = Attention
 {
 	if VAR3 = All
@@ -3981,10 +5009,11 @@ if VAR2 = Wanted
 	if VAR3 = Level
 	{
 		if ENABLE_DEBUG_CRIME = 1
-			LV_Add("","# Crime Wanted Level " VAR4)
+			LV_Add("", "#  Crime Wanted Level " VAR4)
 		return
 	}
 }
+
 if VAR2 = Committed
 {
 	if VAR4 = Crime
@@ -3994,6 +5023,7 @@ if VAR2 = Committed
 		return
 	}
 }
+
 if VAR5 = Escaped
 {
 	if ENABLE_DEBUG_CRIME = 1
@@ -4001,7 +5031,10 @@ if VAR5 = Escaped
 		return
 }
 
-;;;;;;;;;;;;;;;;;;; Auto Mission GPS  ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; Auto Mission GPS  ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+
 if VAR2 = Food
 {
 	if VAR3 = Delivery
@@ -4016,7 +5049,9 @@ if VAR2 = Food
 			gosub mission
 		return
 	}
-}if VAR2 = Trash 
+}
+
+if VAR2 = Trash 
 {
 	if VAR3 = Pickup
 	{
@@ -4033,6 +5068,7 @@ if VAR2 = Food
 		return
 	}
 }
+
 if VAR2 = Truck
 {
 	if VAR3 = Delivery
@@ -4048,6 +5084,7 @@ if VAR2 = Truck
 		return
 	}
 }
+
 if VAR2 = Courier
 {
 	if VAR3 = Mission
@@ -4061,6 +5098,7 @@ if VAR2 = Courier
 		return
 	}
 }
+
 if VAR2 = GPS
 {
 	if VAR3 = Arrived:
@@ -4083,8 +5121,8 @@ if VAR2 = GPS
 		LV_Add("", "# GPS Destination: " VAR5 " " VAR6 " " VAR7 " " VAR8 " " VAR9 " " VAR10 " " VAR11)
 		return
 	}
-
 }
+
 if VAR2 = Distance:
 {
 	if ENABLE_DEBUG_GPS = 1
@@ -4093,7 +5131,10 @@ if VAR2 = Distance:
 		return
 }
 
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; Hit ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+
 if VAR2 = Has
 {
 	if VAR5 = Placed
@@ -4108,7 +5149,7 @@ if VAR2 = Hitman
 	if VAR6 = Killed
 	{
 		if ENABLE_DEBUG_HIT = 1
-			LV_Add("","# Hit Complete " VAR2 " " VAR3 " " Killed VAR6 " " VAR7)
+			LV_Add("", "#  Hit Complete " VAR2 " " VAR3 " " Killed VAR6 " " VAR7)
 		IfNotInString , WORKERS , %VAR2%
 			WORKERS = %WORKERS% %VAR2% %a_space%
 		return
@@ -4136,22 +5177,16 @@ if VAR2 = Delivery
 	if VAR3 = Complete.
 	{
 		if ENABLE_DEBUG_DELIVERY = 1
-			LV_Add("","# Work Delivery Complete " INCAR " " INTRUCK)
+			LV_Add("", "#  Work Delivery Complete " INCAR " " INTRUCK)
 		IF INTRUCK = 1
+			if AUTOTRUCKING = 1
 			SetTimer, delivery , 25000
 		return
 	}
 	if VAR4 = Progress.
 	{
 		if ENABLE_DEBUG_DELIVERY = 1
-			LV_Add("","# Work Delivery In Progress " VAR5)
-		SetTimer, delivery , 25000
-		return
-	}
-	if VAR3 = Complete.
-	{
-		if ENABLE_DEBUG_DELIVERY = 1
-			LV_Add("","# Work Delivery Complete " VAR5)
+			LV_Add("", "#  Work Delivery In Progress " VAR5)
 		SetTimer, delivery , 25000
 		return
 	}
@@ -4189,6 +5224,42 @@ if VAR5 = Arrested
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; Workers ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+
+if VAR2 = There
+{
+	if VAR5 = Suspects
+	{
+		if ENABLE_DEBUG_CRIME = 1
+			LV_Add("","%Crime No Suspects Awaiting Parole")
+		return
+	}
+	if VAR6 = Deliver
+	{
+		if ENABLE_DEBUG_DELIVERY = 1
+			LV_Add("", "#  Work Nothing to Deliver Yet")
+		SetTimer, delivery , 25000
+		return
+	}
+}
+
+if VAR4 = Gives
+{
+	IfInString, VAR7 , Flowers
+	{
+		if ENABLE_DEBUG_WORK = 1
+			LV_Add("","!! Work Flowers " VAR2 " " VAR3 " Gives " VAR5 " " VAR6)
+		IfNotInString , WORKERS , %VAR2%
+			WORKERS = %WORKERS% %VAR2% %a_space%
+		return
+	}
+	IfInString, VAR8 , Kiss
+	{
+		if ENABLE_DEBUG_WORK = 1
+			LV_Add("","!! Work Kiss" VAR2 " " VAR3 " Gives " VAR5 " " VAR6)
+		return
+	}
+}
+
 if VAR5 = Caught
 {
 	if VAR2 = You
@@ -4210,68 +5281,333 @@ if VAR5 = Caught
 	return
 	}
 }
-if VAR2 = There
-{
-	if VAR5 = Suspects
-	{
-		if ENABLE_DEBUG_CRIME = 1
-			LV_Add("","%Crime No Suspects Awaiting Parole")
-		return
-	}
-	if VAR6 = Deliver
-	{
-		if ENABLE_DEBUG_DELIVERY = 1
-			LV_Add("","# Work Nothing to Deliver Yet")
-		SetTimer, delivery , 25000
-		return
-	}
-}
-
-
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; MISC ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-
-
-if VAR2 = {FF66FF}The
-{
-	if VAR4 = Bunny
+if (VAR2 = "Healed" and VAR4 = "Disease")
 	{
-		if ENABLE_DEBUG_HELP = 1
-			LV_Add("","# The Easter Bunny Dropped an Egg")
+	MISSION_TIMER = VAR4	
+	if ENABLE_DEBUG_WORK = 1
+		LV_Add("", "#  " ADDLINE) ;Healed and Disease Cured: Syphilis.
+	return 
+	}
+
+if (VAR2 = "Time" and VAR3 = "Left:")
+	{
+	MISSION_TIMER = VAR4	
+	if ENABLE_DEBUG_WORK = 1
+		LV_Add("", "#  Mission Time Left " VAR4 "." VAR7) ;Time Left: 5 Hours,  24 Minutes
+	return 
+	}
+
+
+if VAR2 = Sent
+{
+	if VAR5 = Tip 
+	{
+		if ENABLE_DEBUG_MONEY = 1
+			LV_Add("", "$ Sent Tip " VAR4 " to " VAR7 " " VAR8 )
 		return
 	}
 }
-if VAR2 = {FF66FF}Happy
+
+if VAR2 = Sales
 {
-	if VAR3 = Easter{FFFFFF}!
+	if VAR3 = Today: 
 	{
-		if ENABLE_DEBUG_HELP = 1
-			LV_Add("","# Happy Easter! " VAR4 " " VAR5 " Found an Easter Egg")
-		return
-	}
-}
-if VAR2 = Happy
-{
-	if VAR3 = Easter!
-	{
-		if ENABLE_DEBUG_HELP = 1
-			LV_Add("","# Happy Easter! /givegift")
+		if ENABLE_DEBUG_WORK = 1
+			LV_Add("", "$ Work Today " VAR4 " " VAR12)
 		return
 	}
 }
 
-
-
-if VAR3 = Frame
+if VAR2 = Vehicle
 {
-	if VAR4 = Limiter:
+	if VAR3 = Alarm 
 	{
 		if ENABLE_DEBUG_HELP = 1
-			LV_Add("","# Frame Limiter " VAR5)
+			LV_Add("", "$ Vehicle Alarm " VAR4)
+		ISALARMED = 0
 		return
 	}
 }
+
+if VAR2 = Challenge
+{
+	if VAR3 = Started!
+	{
+		if ENABLE_DEBUG_HELP = 1
+			LV_Add("", "# Challenge Started!")
+		INCHAL = 1
+		return
+	}
+}
+
+if VAR2 = Civilians
+{
+	if VAR3 = Lose
+	{
+		if ENABLE_DEBUG_HELP = 1
+			LV_Add("", "# Civilians Lose Health On Police Property ")
+		INPOLICE = 1
+		return
+	}
+}
+
+if VAR2 = Continuing
+{
+	if VAR3 = Current
+	{
+		if ENABLE_DEBUG_HELP = 1
+			LV_Add("", "# Continuing Current Delivery. ?")
+		INDELIVERY = 1
+		return
+	}
+}
+
+if VAR2 = Cops
+{
+	if VAR5 = Donuts
+	{
+		if ENABLE_DEBUG_HELP = 1
+			LV_Add("", "? Cops Eat Donuts")
+		INDELIVERY = 1
+		return
+	}
+}
+
+if VAR2 = Could
+{
+	if VAR6 = Random
+	{
+		if ENABLE_DEBUG_DELIVERY = 1
+			LV_Add("", "? Could Not Find A Random Location")
+		INDELIVERY = 1
+		return
+	}
+}
+
+if VAR2 = Deposit
+{
+	if VAR3 = Confirmation:
+	{
+		if ENABLE_DEBUG_MONEY = 1
+			LV_Add("", "$ Deposit Confirmation " VAR6 " Total " VAR11)
+
+		return
+	}
+}
+
+if VAR2 = Withdrawal
+{
+	if VAR3 = Confirmation:
+	{
+		if ENABLE_DEBUG_MONEY = 1
+			LV_Add("", "$ Withdrawal Confirmation " VAR6 " Total " VAR11)
+
+		return
+	}
+}
+
+if VAR2 = Ejected
+{
+	if VAR5 = Regular
+	{
+		if ENABLE_DEBUG_HELP = 1
+			LV_Add("", "# Ejected From The Regular Players Club")
+		return
+	}
+}
+
+if VAR2 = Enter
+{
+	if VAR5 = Checkpoint
+	{
+		if ENABLE_DEBUG_HELP = 1
+			LV_Add("", "# Enter The Red Checkpoint to Jump.")
+		return
+	}
+}
+
+if VAR2 = Horse
+{
+	if VAR4 = Results:
+	{
+		if ENABLE_DEBUG_HORSE = 1
+			LV_Add("", "# Horse Race Results " VAR5 " " VAR6 " " VAR7 " " VAR5 " " VAR5 " " VAR5)
+		return
+	}
+}
+
+if VAR2 = In
+{
+	if VAR4 = Russia,
+	{
+		if ENABLE_DEBUG_HORSE = 1
+			LV_Add("", "# In Soviet Russia, Deer Kill You.")
+		return
+	}
+}
+
+if VAR2 = I
+{
+	if VAR4 = Feel
+	{
+		if ENABLE_DEBUG_HELP = 1
+			LV_Add("", "# I Can Feel It Coming In The Air Tonight, Oh Lord.")
+		return
+	}
+	if VAR4 = Want
+	{
+		if ENABLE_DEBUG_HELP = 1
+			LV_Add("", "# I Don't Want Extra Police Attention")
+		return
+	}
+}
+
+if VAR2 = Join
+{
+	if VAR4 = Party
+	{
+		if ENABLE_DEBUG_HELP = 1
+			LV_Add("", "# Party From " VAR7 " until " VAR10)
+		return
+	}
+}
+
+if VAR2 = Co-Owner
+{
+	if VAR3 = Properties:
+	{
+		if ENABLE_DEBUG_HELP = 1
+			LV_Add("", "# Co-Owner Properties " VAR4)
+		return
+	}
+}
+
+if VAR2 = Biggest
+{
+	if VAR3 = Church
+	{
+		if ENABLE_DEBUG_HELP = 1
+			LV_Add("", "# Church Donation " VAR8 " " VAR10)
+		return
+	}
+}
+
+if VAR2 = House
+{
+	if VAR3 = Maid
+	{
+		if ENABLE_DEBUG_HELP = 1
+			LV_Add("", "# House Maid " VAR4 " " VAR5 " Cleaned " VAR8 " House " VAR10 " " VAR11 " " VAR12 " " VAR13)
+		IfNotInString , WORKERS , %VAR4%
+			WORKERS = %WORKERS% %VAR4% %a_space%
+		return
+	}
+}
+
+if VAR2 = Lawsuit
+{
+	if VAR4 = Plaintiff:
+	{
+		if ENABLE_DEBUG_HELP = 1
+			LV_Add("", "# Lawsuit " VAR5 " " VAR6 " Sued " VAR9 " " VAR10 " " VAR15)
+		IfNotInString , WORKERS , %VAR5%
+			WORKERS = %WORKERS% %VAR5% %a_space%
+		return
+	}
+}
+
+if VAR2 = Votes
+{
+	if VAR4 = Plaintiff:
+	{
+		if ENABLE_DEBUG_HELP = 1
+			LV_Add("", "# Lawsuit Votes Plaintiff " VAR5 " Defendant " VAR12)
+		return
+	}
+}
+
+if VAR2 = Financial
+{
+	if VAR3 = Statement
+	{
+		if ENABLE_DEBUG_MONEY = 1
+			LV_Add("", "$ Financial Statement Cash " VAR10 " Bank " VAR16)
+		return
+	}
+}
+
+if VAR2 = Net
+{
+	if VAR3 = Profit:
+	{
+		if ENABLE_DEBUG_MONEY = 1
+			LV_Add("", "$ Net Profit " VAR4)
+		return
+	}
+}
+
+if VAR2 = Income
+{
+	if VAR3 = Tax:
+	{
+		if ENABLE_DEBUG_MONEY = 1
+			LV_Add("", "$ Income Tax " VAR4)
+		return
+	}
+}
+
+if VAR2 = Total
+{
+	if VAR3 = Tax:
+	{
+		if ENABLE_DEBUG_MONEY = 1
+			LV_Add("", "$ Total Tax " VAR4 " Credits " VAR9 " Paid " VAR14)
+		return
+	}
+}
+
+if VAR2 = Paid
+{
+	if VAR3 = From
+	{
+		if ENABLE_DEBUG_MONEY = 1
+			LV_Add("", "$ Paid From Pocket " VAR5 " Bank " VAR10)
+		return
+	}
+}
+
+if VAR2 = Net
+{
+	if VAR3 = Profit
+	{
+		if ENABLE_DEBUG_MONEY = 1
+			LV_Add("", "$ Net Profit " VAR4)
+		return
+	}
+}
+
+if VAR2 = Selection
+{
+	IfInString, VAR3, Cancelled
+	{
+		if ENABLE_DEBUG_HELP = 1
+			LV_Add("", "$ Selection Cancelled ")
+		INMENU = 0
+		return
+	}
+}
+
+if VAR2 = Sexual
+	if VAR3 = Encounter
+		if VAR4 = Mission
+		{
+			if ENABLE_DEBUG_WORK = 1
+				LV_Add("","!! Work Sexual Encounter")
+			return
+		}
 
 if VAR2 = Beginning
 {
@@ -4283,43 +5619,587 @@ if VAR2 = Beginning
 	}
 }
 
-if VAR2 = Nothing
+if VAR2 = Player
 {
-	if VAR4 Cancel!
+	if VAR5 = Day:
 	{
-		if ENABLE_DEBUG_HELP = 1
-			LV_Add("","# " VAR2 " Nothing to Cancel!")
+		if ENABLE_DEBUG_WORK = 1
+			LV_Add("", "!! Work POTD " VAR6 " " VAR7)
+		IfNotInString , WORKERS , %VAR6%
+			WORKERS = %WORKERS% %VAR6% %a_space%
 		return
 	}
 }
+
+if VAR2 = Bank
+{
+	if VAR4 = Balance:
+	{				
+		if ENABLE_DEBUG_MONEY = 1
+			LV_Add("", "# Bank Balance: "VAR5)			
+		return
+	}	
+}
+
+if VAR2 = Invalid
+{
+	if VAR3 = Option
+	{
+		if ENABLE_DEBUG_HELP = 1
+			LV_Add("", "# Invalid Option")
+		return
+	}
+}
+
+if VAR2 = Food
+{
+	if VAR3 = Sales: 
+	{
+		if ENABLE_DEBUG_WORK = 1
+			LV_Add("","$ Stat Food Sales " VAR4 " Deliveries " VAR8)
+		return
+	}
+}
+
+if VAR2 = Friday
+{
+	if VAR4 = Party
+	{
+		if ENABLE_DEBUG_HELP = 1
+			LV_Add("", "# Party at " VAR6 " " VAR7 " " VAR8)
+		return
+	}
+}
+
+if VAR3 = Friday
+{
+	if VAR5 = Party
+	{
+		if ENABLE_DEBUG_HELP = 1
+			LV_Add("", "# Party From Finished")
+		return
+	}
+}
+
+if VAR3 = Lived
+{
+	if VAR12 = Years
+	{
+		if ENABLE_DEBUG_BDAYS = 1
+			LV_Add("","!! " VAR2 " " VAR3 " Lived " VAR6 " Days")
+		HIM = VAR2
+		gosub stshim
+		return
+	}
+}
+
+if VAR3 = Scratched
+{
+	if VAR6 = Ticket,
+	{
+		if ENABLE_DEBUG_TICKET = 1
+			LV_Add("", "# Scratchy Ticket")
+		return
+	}
+}
+
 if VAR4 = Attempted 
 {
 	if VAR6 = Break
 	{
 		if ENABLE_DEBUG_WORK = 1
-			LV_Add("","# House " VAR2 " Attempted Breaking")
+			LV_Add("", "#  House " VAR2 " Attempted Breaking")
 		return
 	}
 }
 
-if VAR5 = Not
+if VAR4 = Dropped
 {
-	if VAR6 = Accepting
+	if VAR6 = Money
 	{
-		if ENABLE_DEBUG_HELP = 1
-			LV_Add("","# " VAR2 " " VAR3 " No PM")
+		if ENABLE_DEBUG_MONEYBAG = 1
+			LV_Add("","!! " VAR2 " " VAR3 " Dropped A Money Bag " VAR10 " " VAR11 " " VAR12)
 		return
 	}
 }
+
+if VAR5 = Picked
+{
+	if VAR8 = Money
+			{
+		if ENABLE_DEBUG_MONEYBAG = 1
+			LV_Add("","!! " VAR2 " " VAR3 " Has Picked Up His Money Bag In " VAR11 " " VAR12 " " VAR13)
+		return
+	}
+}
+
+if VAR7 = Social
+{
+	if VAR8 Security
+	{
+		if ENABLE_DEBUG_HELP = 1
+			LV_Add("", "$ Tax " VAR2 " " VAR3 " Has Received A Social Security Check")	
+		return
+	}
+}
+
+if VAR2 = Congratulations,
+{
+		if ENABLE_DEBUG_HELP = 1
+			LV_Add("", "? Award " VAR5 " " VAR6 " " VAR7 " " VAR8 " " VAR9 " " VAR10)
+		return
+}
+
+if VAR2 = Congratulations!
+{
+		if ENABLE_DEBUG_DICE = 1
+			LV_Add("", "? Dice Win " VAR5 " From " VAR7 " " VAR8)
+		return
+}
+
+if VAR2 = Audio
+{
+	if VAR3 = stream:
+	{
+		if ENABLE_DEBUG_HELP = 1
+			LV_Add("", "? Audio stream " VAR4)
+		return
+	}
+}
+
+if VAR2 = Clothes
+{
+	if VAR4 = Tax:
+	{
+		if ENABLE_DEBUG_MONEY = 1
+			LV_Add("", "$ Clothes Sales Tax " VAR5 " Out Of " VAR8)
+		return
+	}
+}
+
+if VAR2 = Killed
+{
+	if VAR3 = Unfairly
+	{
+		if ENABLE_DEBUG_HELP = 1
+			LV_Add("", "# Killed Unfairly - Continuing Current Life")
+		return
+	}
+}
+
+if VAR2 = Medical
+{
+	if VAR3 = Fees:
+	{
+		if ENABLE_DEBUG_HELP = 1
+			LV_Add("", "# Killed Fairly - Paid Fees")
+		return
+	}
+}
+
+if VAR2 = {D6D631}/ar
+{
+		if ENABLE_DEBUG_HELP = 1
+			LV_Add("", "? /ar")
+		ISCRAZYBOBS = 1
+		return
+}
+
+if VAR2 = {D6D631}/bk
+{
+		if ENABLE_DEBUG_HELP = 1
+			LV_Add("", "? /bk")
+		ISCRAZYBOBS = 1
+		return
+}
+
+if VAR2 = {D6D631}/sell
+{
+		if ENABLE_DEBUG_HELP = 1
+			LV_Add("", "? /sell")
+		ISCRAZYBOBS = 1
+		return
+}
+
+if VAR3 = Traps
+{
+	if VAR6 = Enough
+	{
+		if ENABLE_DEBUG_PLANT = 1
+			LV_Add("", "# Traps Lost No Plants Left")
+		return
+	}
+}
+
+if VAR3 = {D6D631}/cnrradio 
+{
+		if ENABLE_DEBUG_HELP = 1
+			LV_Add("", "? /cnrradio")
+		return
+}
+
+if VAR3 = /treat
+{
+		if ENABLE_DEBUG_HELP = 1
+			LV_Add("", "? /trick or /treat")
+		gosub trick
+		return
+}
+
+if VAR3 = {D6D631}/enter
+{
+		if ENABLE_DEBUG_HELP = 1
+			LV_Add("", "? /enter")
+		return
+}
+
+if VAR3 = /mission
+{
+		if ENABLE_DEBUG_HELP = 1
+			LV_Add("", "? /mission")
+		return
+}
+
 if VAR4 = Not
 {
-	if VAR6 = Valid
+	if VAR6 = Valid:
 	{
 		if ENABLE_DEBUG_HELP = 1
-			LV_Add("","# " VAR2 " Not a Valid Player")
+			LV_Add("", "# Help " VAR2 " Is Not A Valid Player.")
+		LASTDICEFAIL = 1
 		return
 	}
 }
+
+if VAR4 = /treat
+{
+		if ENABLE_DEBUG_HELP = 1
+			LV_Add("", "? /trick or /treat")
+		gosub trick
+		return
+}
+
+
+if VAR2 = Sorry,
+	if VAR4 = Selling
+		{
+			if ENABLE_DEBUG_HELP = 1
+				LV_Add("", "#  Wait Till 2:00")
+			return
+		}
+
+if VAR2 = Nothing
+{
+	if VAR4 Cancel!
+	{
+		if ENABLE_DEBUG_HELP = 1
+			LV_Add("", "#  " VAR2 " Nothing to Cancel!")
+		return
+	}
+}
+
+if VAR2 = Unknown
+	if VAR3 = Command
+	{
+		if ENABLE_DEBUG = 4	
+			LV_Add("", " # Unknown Command" ) ; Unknown Command - Type    /cmds   for a list of available commands.
+		return
+	}
+
+if VAR2 = Visit
+	if VAR5 = Dealership
+	{
+		INV_CAR_CRED++
+		if ENABLE_DEBUG = 4	
+			LV_Add("", " # Free Car Credit " ) ; Visit Any {DE5863}Car Dealership Checkpoint {FFFFFF}To Claim Your {00AAFF}Gift{FFFFFF}.
+		return
+	}
+
+if VAR2 = This 
+	if VAR6 = Registered{FFFFFF}.
+	{
+		IS_REG_PLAYER = 1
+		if ENABLE_DEBUG = 4	
+			LV_Add("", " # Registed Account") ;This Name Is {FF0000}Already Registered{FFFFFF}.  Please Login or Change Your Name.
+		return
+	}
+
+if VAR2 = Press 
+	if VAR3 = {D6D631}SHIFT
+	{
+		if ENABLE_DEBUG = 4	
+			LV_Add("", " # Continue Your Current Life") ;Press {D6D631}SHIFT {FFFFFF}To Continue Your Current Life Or Type  {D6D631}/newlife  {FFFFFF}To Start A New Life
+		return
+	}
+
+if VAR2 = No
+	if VAR3 = Messages
+	{
+		PM_REPLY = 
+		if ENABLE_DEBUG = 4	
+			LV_Add("", " # " ADDLINE) ;No Messages to Reply To / Player Disconnected
+		return
+	}
+
+if VAR2 = USAGE:
+{
+	if ENABLE_DEBUG = 4	
+		LV_Add("", " # " ADDLINE) 	;USAGE: /ms (nick/id) (message) - Enter a Message.
+	return
+}
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; Nobody ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+if VAR2 = Nobody
+{
+	if VAR7 = Gift
+	{
+		if ENABLE_DEBUG = 4	
+			LV_Add("", " # Nobody Close Enough To " VAR6 ) ; Nobody Has Sent You A Gift Recently!
+		return
+	}
+	if VAR3 = Close
+	{
+		if ENABLE_DEBUG = 4	
+			LV_Add("", " # Nobody Close Enough To " VAR6 ) ; Nobody Close Enough To Slap With A Fish.
+		return
+	}
+}
+
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;; Press ;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+
+
+if VAR2 = Press 					
+{
+	if VAR12 = {D6D631}/fish
+	{
+		if ENABLE_DEBUG_HELP = 1
+			LV_Add("", "# Fishing Here")
+		BOAT = 1
+		IF FPS = %FPSLOW%
+			gosub FPSHIGH
+		
+		if FISH = 1
+		gosub FISH
+		SetTimer, vehc , 500
+		return
+	}
+	if VAR12 = {D6D631}/delivery
+	{
+		INTRUCK = 1
+		BOAT = 0
+		
+		if ENABLE_DEBUG_DELIVERY = 1
+			LV_Add("", "# Trucking Now?")
+		if AUTOTRUCKING = 1
+			gosub delivery
+		return
+	}
+}
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; Type ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+
+if VAR2 = Type
+{
+	if (VAR3 = "{D6D631}/morestats" or VAR4 = "{D6D631}/morestats") 
+	{
+		if ENABLE_DEBUG_HELP = 1
+			LV_Add("", "#  Type /morestats") ;Type   {D6D631}/morestats [nick/id]   {FFFFFF}For More Life Stats.
+		return 
+	}
+	
+	if (VAR3 = "{D6D631}/driver" or VAR4 = "{D6D631}/driver") 
+	{
+		if ENABLE_DEBUG_HELP = 1
+			LV_Add("", "#  Type /driver") ; Type {D6D631}/driver [fare] {FFFFFF}To Go On Duty As A {32CD32}Driver{FFFFFF}.
+		return 
+	}
+	
+	if (VAR3 = "{D6D631}/instafix" or VAR4 = "{D6D631}/instafix") 
+	{
+		if ENABLE_DEBUG_HELP = 1
+			LV_Add("", "#  Type /instafix") ; Type {D6D631}/instafix {FFFFFF}In A Vehicle To Repair It Instantly.
+		return 
+	}
+	if (VAR3 = "{D6D631}/clothes" or VAR4 = "{D6D631}/clothes") 
+	{
+		if ENABLE_DEBUG_HELP = 1
+			LV_Add("", "#  Type /clothes") ; Type  {D6D631}/clothes  {FFFFFF}To Manage Your Clothes And Accessories.
+		return 
+	}
+	if (VAR3 = "{D6D631}/ejm" or VAR4 = "{D6D631}/ejm") 
+	{
+		if ENABLE_DEBUG_HELP = 1
+			LV_Add("", "#  Type /ejm") ; Type  {D6D631}/ejm  {FFFFFF}to Eject Yourself From the Vehicle
+		return 
+	}
+	if (VAR3 = "{D6D631}/driverdest" or VAR4 = "{D6D631}/driverdest") 
+	{
+		if ENABLE_DEBUG_HELP = 1
+			LV_Add("", "#  Type /driverdest") ; Type  {D6D631}/driverdest  {FFFFFF}to Send The Driver A {00AAFF}GPS Destination{FFFFFF}.
+		return 
+	}
+	if (VAR5 = "{D6D631}/r" or VAR5 = "/r") 
+	{
+		if ENABLE_DEBUG_HELP = 1
+			LV_Add("", "#  Type /r") ; Type   {D6D631}/r (msg)   {FFFFFF}to Reply Quickly.
+		return 
+	}
+}	
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; Please ; Wait ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+if VAR2 = Please
+{
+	if VAR3 = Wait
+	{
+		if VAR7 = Animation.
+			SoundPlay *32
+			return
+		if VAR9 = Stripper
+			SetTimer , strip, 15000	
+		if VAR5 = Minutes
+		{
+		WAIT_TIME := VAR4*1000
+			if ENABLE_DEBUG_WORK = 1
+		LV_Add("", "# Help " VAR2 " Please Wait. " VAR4 " Result " WAIT_TIME)
+		SetTimer , mission, %WAIT_TIME%
+		return
+		}
+
+		LAGWAIT = 5000
+		WAIT_MIN := VAR4*60000
+		WAIT_SEC := VAR7*1000
+		WAIT_TIME := WAIT_MIN+WAIT_SEC+LAGWAIT
+		if ENABLE_DEBUG_WORK = 1
+			LV_Add("", "# Help " VAR2 " Please Wait. " VAR4 " " VAR7 " Result " WAIT_TIME)
+		SetTimer , mission, %WAIT_TIME%
+
+		return
+		
+	}
+	IfInString, VAR7, Animation
+	{
+		if ENABLE_DEBUG_HELP = 1
+			LV_Add("", "$ Selection Cancelled ")
+		return
+	}
+}
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; A ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+if VAR2 = A
+{
+	
+	
+	if VAR3 = Wiper
+	{
+		if VAR4 = Strap
+		{
+			if ENABLE_DEBUG_HELP = 1
+				LV_Add("", "# Wiper Strap is Being Installed On Your Vehicle")
+			return
+		}
+	}
+	if VAR3 = Previous
+	{
+		if VAR4 = Hit
+		{
+			if ENABLE_DEBUG_HELP = 1
+				LV_Add("", "# Cannot Cancel Your Hit Contract on " VAR8 " " VAR9)
+			return
+		}
+	}
+	if VAR3 = Law
+	{
+		if VAR4 = Enforcement
+		{
+			if ENABLE_DEBUG_PLANT = 1
+				LV_Add("", "# Law Enforcement Agent Has Found " VAR13)
+			return
+		}
+	}
+	if VAR3 = Hippie
+	{
+		if VAR6 = Trying
+		{
+			if ENABLE_DEBUG_PLANT = 1
+				LV_Add("", "# Hippie Was Trying")
+			return
+		}
+	}
+	
+	if VAR3 = Deer
+	{
+		if VAR5 = Eaten
+		{
+			if ENABLE_DEBUG_PLANT = 1
+				LV_Add("", "# Deer Has Eaten Some Drugs " VAR12)
+			return
+		}
+		if VAR5 = Killed
+		{
+			if ENABLE_DEBUG_PLANT = 1
+				LV_Add("", "# Deer Has Killed " VAR6 " " VAR7)
+			return
+		}
+		if VAR5 = Was
+		{
+			if ENABLE_DEBUG_PLANT = 1
+				LV_Add("", "# Deer Was Trying")
+			return
+		}
+	}
+}
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; Wait ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; Please ; Wait ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+if VAR2 = Please
+{
+	if VAR3 = Wait
+	{
+		if VAR7 = Animation.
+			SoundPlay *32
+			return
+		if VAR9 = Stripper
+			SetTimer , strip, 15000	
+		if VAR5 = Minutes
+		{
+		WAIT_TIME := VAR4*1000
+			if ENABLE_DEBUG_WORK = 1
+		LV_Add("", "# Help " VAR2 " Please Wait. " VAR4 " Result " WAIT_TIME)
+		SetTimer , mission, %WAIT_TIME%
+		return
+		}
+
+		LAGWAIT = 5000
+		WAIT_MIN := VAR4*60000
+		WAIT_SEC := VAR7*1000
+		WAIT_TIME := WAIT_MIN+WAIT_SEC+LAGWAIT
+		if ENABLE_DEBUG_WORK = 1
+			LV_Add("", "# Help " VAR2 " Please Wait. " VAR4 " " VAR7 " Result " WAIT_TIME)
+		SetTimer , mission, %WAIT_TIME%
+
+		return
+		
+	}
+	IfInString, VAR7, Animation
+	{
+		if ENABLE_DEBUG_HELP = 1
+			LV_Add("", "$ Selection Cancelled ")
+		return
+	}
+}
+
 if VAR3 = Wait
 {
 	if VAR5 = Fishing
@@ -4337,37 +6217,76 @@ if VAR3 = Wait
 		return
 	}
 }
-if VAR7 = Social
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; A ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+if VAR2 = A
 {
-	if VAR8 Security
+	if VAR3 = Wiper
 	{
-		if ENABLE_DEBUG_HELP = 1
-			LV_Add("", "$ Tax " VAR2 " " VAR3 " Has Received A Social Security Check")	
-		return
+		if VAR4 = Strap
+		{
+			if ENABLE_DEBUG_HELP = 1
+				LV_Add("", "# Wiper Strap is Being Installed On Your Vehicle")
+			return
+		}
 	}
-}
-if VAR4 = Released
-{
-	if VAR5 From
+	if VAR3 = Previous
 	{
-		if ENABLE_DEBUG_HELP = 1
-			LV_Add("", "$ Jail " VAR2 " " VAR3 " Released")	
-		return
+		if VAR4 = Hit
+		{
+			if ENABLE_DEBUG_HELP = 1
+				LV_Add("", "# Cannot Cancel Your Hit Contract on " VAR8 " " VAR9)
+			return
+		}
+	}
+	if VAR3 = Law
+	{
+		if VAR4 = Enforcement
+		{
+			if ENABLE_DEBUG_PLANT = 1
+				LV_Add("", "# Law Enforcement Agent Has Found " VAR13)
+			return
+		}
+	}
+	if VAR3 = Hippie
+	{
+		if VAR6 = Trying
+		{
+			if ENABLE_DEBUG_PLANT = 1
+				LV_Add("", "# Hippie Was Trying")
+			return
+		}
+	}
+	
+	if VAR3 = Deer
+	{
+		if VAR5 = Eaten
+		{
+			if ENABLE_DEBUG_PLANT = 1
+				LV_Add("", "# Deer Has Eaten Some Drugs " VAR12)
+			return
+		}
+		if VAR5 = Killed
+		{
+			if ENABLE_DEBUG_PLANT = 1
+				LV_Add("", "# Deer Has Killed " VAR6 " " VAR7)
+			return
+		}
+		if VAR5 = Was
+		{
+			if ENABLE_DEBUG_PLANT = 1
+				LV_Add("", "# Deer Was Trying")
+			return
+		}
 	}
 }
 
 
-if VAR2 = Player
-{
-	if VAR5 = Day:
-	{
-		if ENABLE_DEBUG_WORK = 1
-			LV_Add("", "!! Work POTD " VAR6 " " VAR7)
-		IfNotInString , WORKERS , %VAR6%
-			WORKERS = %WORKERS% %VAR6% %a_space%
-		return
-	}
-}
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; IS ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+
 if VAR4 = Is
 {
 	if VAR5 = Not
@@ -4436,25 +6355,9 @@ if VAR4 = Is
 	}
 }	
 
-if VAR2 = Bank
-{
-	if VAR4 = Balance:
-	{				
-		if ENABLE_DEBUG_MONEY = 1
-			LV_Add("", "# Bank Balance: "VAR5)			
-		return
-	}	
-}
 
-if VAR2 = Invalid
-{
-	if VAR3 = Option
-	{
-		if ENABLE_DEBUG_HELP = 1
-			LV_Add("", "# Invalid Option")
-		return
-	}
-}
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; USP ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
 
 if VAR2 = UPS
 {
@@ -4477,557 +6380,10 @@ if VAR2 = UPS
 	}
 }
 
-if VAR2 = Food
-{
-	if VAR3 = Sales: 
-	{
-		if ENABLE_DEBUG_WORK = 1
-			LV_Add("","$ Stat Food Sales " VAR4 " Deliveries " VAR8)
-		return
-	}
-}
 
-if VAR4 = Dropped
-{
-	if VAR6 = Money
-	{
-		if ENABLE_DEBUG_MONEYBAG = 1
-			LV_Add("","!! " VAR2 " " VAR3 " Dropped A Money Bag " VAR10 " " VAR11 " " VAR12)
-		return
-	}
-}
-
-if VAR5 = Picked
-{
-	if VAR8 = Money
-			{
-		if ENABLE_DEBUG_MONEYBAG = 1
-			LV_Add("","!! " VAR2 " " VAR3 " Has Picked Up His Money Bag In " VAR11 " " VAR12 " " VAR13)
-		return
-	}
-}
-	
-if VAR3 = Lived
-{
-	if VAR12 = Years
-	{
-		if ENABLE_DEBUG_BDAYS = 1
-			LV_Add("","!! " VAR2 " " VAR3 " Lived " VAR6 " Days")
-		HIM = VAR2
-		gosub stshim
-		return
-	}
-}
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; This ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 
-
-if VAR3 = Scratched
-{
-	if VAR6 = Ticket,
-	{
-		if ENABLE_DEBUG_TICKET = 1
-			LV_Add("", "# Scratchy Ticket")
-		return
-	}
-}
-
-if VAR2 = Friday
-{
-	if VAR4 = Party
-	{
-		if ENABLE_DEBUG_HELP = 1
-			LV_Add("", "# Party at " VAR6 " " VAR7 " " VAR8)
-		return
-	}
-}
-if VAR3 = Friday
-{
-	if VAR5 = Party
-	{
-		if ENABLE_DEBUG_HELP = 1
-			LV_Add("", "# Party From Finished")
-		return
-	}
-}
-if VAR2 = Join
-{
-	if VAR4 = Party
-	{
-		if ENABLE_DEBUG_HELP = 1
-			LV_Add("", "# Party From " VAR7 " until " VAR10)
-		return
-	}
-}
-
-if VAR2 = Co-Owner
-{
-	if VAR3 = Properties:
-	{
-		if ENABLE_DEBUG_HELP = 1
-			LV_Add("", "# Co-Owner Properties " VAR4)
-		return
-	}
-}
-if VAR2 = Biggest
-{
-	if VAR3 = Church
-	{
-		if ENABLE_DEBUG_HELP = 1
-			LV_Add("", "# Church Donation " VAR8 " " VAR10)
-		return
-	}
-}
-if VAR2 = House
-{
-	if VAR3 = Maid
-	{
-		if ENABLE_DEBUG_HELP = 1
-			LV_Add("", "# House Maid " VAR4 " " VAR5 " Cleaned " VAR8 " House " VAR10 " " VAR11 " " VAR12 " " VAR13)
-		IfNotInString , WORKERS , %VAR4%
-			WORKERS = %WORKERS% %VAR4% %a_space%
-		return
-	}
-}
-if VAR2 = Lawsuit
-{
-	if VAR4 = Plaintiff:
-	{
-		if ENABLE_DEBUG_HELP = 1
-			LV_Add("", "# Lawsuit " VAR5 " " VAR6 " Sued " VAR9 " " VAR10 " " VAR15)
-		IfNotInString , WORKERS , %VAR5%
-			WORKERS = %WORKERS% %VAR5% %a_space%
-		return
-	}
-}
-if VAR2 = Votes
-{
-	if VAR4 = Plaintiff:
-	{
-		if ENABLE_DEBUG_HELP = 1
-			LV_Add("", "# Lawsuit Votes Plaintiff " VAR5 " Defendant " VAR12)
-		return
-	}
-}
-
-
-if VAR2 = Financial
-{
-	if VAR3 = Statement
-	{
-		if ENABLE_DEBUG_MONEY = 1
-			LV_Add("", "$ Financial Statement Cash " VAR10 " Bank " VAR16)
-		return
-	}
-}
-if VAR2 = Net
-{
-	if VAR3 = Profit:
-	{
-		if ENABLE_DEBUG_MONEY = 1
-			LV_Add("", "$ Net Profit " VAR4)
-		return
-	}
-}
-
-if VAR2 = Income
-{
-	if VAR3 = Tax:
-	{
-		if ENABLE_DEBUG_MONEY = 1
-			LV_Add("", "$ Income Tax " VAR4)
-		return
-	}
-}
-if VAR2 = Total
-{
-	if VAR3 = Tax:
-	{
-		if ENABLE_DEBUG_MONEY = 1
-			LV_Add("", "$ Total Tax " VAR4 " Credits " VAR9 " Paid " VAR14)
-		return
-	}
-}
-if VAR2 = Paid
-{
-	if VAR3 = From
-	{
-		if ENABLE_DEBUG_MONEY = 1
-			LV_Add("", "$ Paid From Pocket " VAR5 " Bank " VAR10)
-		return
-	}
-}
-if VAR2 = Net
-{
-	if VAR3 = Profit
-	{
-		if ENABLE_DEBUG_MONEY = 1
-			LV_Add("", "$ Net Profit " VAR4)
-		return
-	}
-}
-
-if VAR2 = Selection
-{
-	IfInString, VAR3, Cancelled
-	{
-		if ENABLE_DEBUG_HELP = 1
-			LV_Add("", "$ Selection Cancelled ")
-		INMENU = 0
-		return
-	}
-}
-if VAR2 = Please
-{
-	if VAR3 = Wait
-	{
-		if VAR7 = Animation.
-			SoundPlay *32
-			return
-		if VAR9 = Stripper
-			SetTimer , strip, 15000	
-		if VAR5 = Minutes
-		{
-		WAIT_TIME := VAR4*1000
-			if ENABLE_DEBUG_WORK = 1
-		LV_Add("", "# Help " VAR2 " Please Wait. " VAR4 " Result " WAIT_TIME)
-		SetTimer , mission, %WAIT_TIME%
-		return
-		}
-
-		LAGWAIT = 5000
-		WAIT_MIN := VAR4*60000
-		WAIT_SEC := VAR7*1000
-		WAIT_TIME := WAIT_MIN+WAIT_SEC+LAGWAIT
-		if ENABLE_DEBUG_WORK = 1
-			LV_Add("", "# Help " VAR2 " Please Wait. " VAR4 " " VAR7 " Result " WAIT_TIME)
-		SetTimer , mission, %WAIT_TIME%
-
-		return
-		
-	}
-	IfInString, VAR7, Animation
-	{
-		if ENABLE_DEBUG_HELP = 1
-			LV_Add("", "$ Selection Cancelled ")
-		return
-	}
-}
-if VAR2 = Sent
-{
-	if VAR5 = Tip 
-	{
-		if ENABLE_DEBUG_MONEY = 1
-			LV_Add("", "$ Sent Tip " VAR4 " to " VAR7 " " VAR8 )
-		return
-	}
-}
-if VAR2 = Sales
-{
-	if VAR3 = Today: 
-	{
-		if ENABLE_DEBUG_WORK = 1
-			LV_Add("", "$ Work Today " VAR4 " " VAR12)
-		return
-	}
-}
-if VAR2 = Vehicle
-{
-	if VAR3 = Alarm 
-	{
-		if ENABLE_DEBUG_HELP = 1
-			LV_Add("", "$ Vehicle Alarm " VAR4)
-		ISALARMED = 0
-		return
-	}
-}
-
-
-
-if VAR2 = Challenge
-{
-	if VAR3 = Started!
-	{
-		if ENABLE_DEBUG_HELP = 1
-			LV_Add("", "# Challenge Started!")
-		INCHAL = 1
-		return
-	}
-}
-
-if VAR2 = Civilians
-{
-	if VAR3 = Lose
-	{
-		if ENABLE_DEBUG_HELP = 1
-			LV_Add("", "# Civilians Lose Health On Police Property ")
-		INPOLICE = 1
-		return
-	}
-}
-if VAR2 = Continuing
-{
-	if VAR3 = Current
-	{
-		if ENABLE_DEBUG_HELP = 1
-			LV_Add("", "# Continuing Current Delivery. ?")
-		INDELIVERY = 1
-		return
-	}
-}
-if VAR2 = Cops
-{
-	if VAR5 = Donuts
-	{
-		if ENABLE_DEBUG_HELP = 1
-			LV_Add("", "? Cops Eat Donuts")
-		INDELIVERY = 1
-		return
-	}
-}
-
-if VAR2 = Could
-{
-	if VAR6 = Random
-	{
-		if ENABLE_DEBUG_DELIVERY = 1
-			LV_Add("", "? Could Not Find A Random Location")
-		INDELIVERY = 1
-		return
-	}
-}
-if VAR2 = Deposit
-{
-	if VAR3 = Confirmation:
-	{
-		if ENABLE_DEBUG_MONEY = 1
-			LV_Add("", "$ Deposit Confirmation " VAR6 " Total " VAR11)
-
-		return
-	}
-}
-if VAR2 = Withdrawal
-{
-	if VAR3 = Confirmation:
-	{
-		if ENABLE_DEBUG_MONEY = 1
-			LV_Add("", "$ Withdrawal Confirmation " VAR6 " Total " VAR11)
-
-		return
-	}
-}
-
-if VAR2 = Ejected
-{
-	if VAR5 = Regular
-	{
-		if ENABLE_DEBUG_HELP = 1
-			LV_Add("", "# Ejected From The Regular Players Club")
-		return
-	}
-}
-
-
-if VAR2 = Enter
-{
-	if VAR5 = Checkpoint
-	{
-		if ENABLE_DEBUG_HELP = 1
-			LV_Add("", "# Enter The Red Checkpoint to Jump.")
-		return
-	}
-}
-
-if VAR2 = Horse
-{
-	if VAR4 = Results:
-	{
-		if ENABLE_DEBUG_HORSE = 1
-			LV_Add("", "# Horse Race Results " VAR5 " " VAR6 " " VAR7 " " VAR5 " " VAR5 " " VAR5)
-		return
-	}
-}
-if VAR2 = In
-{
-	if VAR4 = Russia,
-	{
-		if ENABLE_DEBUG_HORSE = 1
-			LV_Add("", "# In Soviet Russia, Deer Kill You.")
-		return
-	}
-}
-if VAR2 = I
-{
-	if VAR4 = Feel
-	{
-		if ENABLE_DEBUG_HELP = 1
-			LV_Add("", "# I Can Feel It Coming In The Air Tonight, Oh Lord.")
-		return
-	}
-	if VAR4 = Want
-	{
-		if ENABLE_DEBUG_HELP = 1
-			LV_Add("", "# I Don't Want Extra Police Attention")
-		return
-	}
-}
-
-
-
-if VAR2 = A
-{
-	if VAR3 = Wiper
-	{
-		if VAR4 = Strap
-		{
-			if ENABLE_DEBUG_HELP = 1
-				LV_Add("", "# Wiper Strap is Being Installed On Your Vehicle")
-			return
-		}
-	}
-	if VAR3 = Previous
-	{
-		if VAR4 = Hit
-		{
-			if ENABLE_DEBUG_HELP = 1
-				LV_Add("", "# Cannot Cancel Your Hit Contract on " VAR8 " " VAR9)
-			return
-		}
-	}
-	if VAR3 = Law
-	{
-		if VAR4 = Enforcement
-		{
-			if ENABLE_DEBUG_PLANT = 1
-				LV_Add("", "# Law Enforcement Agent Has Found " VAR13)
-			return
-		}
-	}
-	if VAR3 = Hippie
-	{
-		if VAR6 = Trying
-		{
-			if ENABLE_DEBUG_PLANT = 1
-				LV_Add("", "# Hippie Was Trying")
-			return
-		}
-	}
-	
-	if VAR3 = Deer
-	{
-		if VAR5 = Eaten
-		{
-			if ENABLE_DEBUG_PLANT = 1
-				LV_Add("", "# Deer Has Eaten Some Drugs " VAR12)
-			return
-		}
-		if VAR5 = Killed
-		{
-			if ENABLE_DEBUG_PLANT = 1
-				LV_Add("", "# Deer Has Killed " VAR6 " " VAR7)
-			return
-		}
-		if VAR5 = Was
-		{
-			if ENABLE_DEBUG_PLANT = 1
-				LV_Add("", "# Deer Was Trying")
-			return
-		}
-	}
-}
-
-
-
-if VAR2 = {D6D631}/ar
-{
-		if ENABLE_DEBUG_HELP = 1
-			LV_Add("", "? /ar")
-		ISCRAZYBOBS = 1
-		return
-}
-if VAR2 = {D6D631}/bk
-{
-		if ENABLE_DEBUG_HELP = 1
-			LV_Add("", "? /bk")
-		ISCRAZYBOBS = 1
-		return
-}
-if VAR2 = {D6D631}/sell
-{
-		if ENABLE_DEBUG_HELP = 1
-			LV_Add("", "? /sell")
-		ISCRAZYBOBS = 1
-		return
-}
-if VAR5 = {D6D631}/help
-{
-		if ENABLE_DEBUG_HELP = 1
-			LV_Add("", "? /help")
-		ISCRAZYBOBS = 1
-		return
-}
-if VAR5 = {D6D631}/aoff
-{
-		if ENABLE_DEBUG_HELP = 1
-			LV_Add("", "? /aoff")
-		ISCRAZYBOBS = 1
-		return
-}
-if VAR3 = /treat
-{
-		if ENABLE_DEBUG_HELP = 1
-			LV_Add("", "? /trick or /treat")
-		gosub trick
-		return
-}
-if VAR4 = /treat
-{
-		if ENABLE_DEBUG_HELP = 1
-			LV_Add("", "? /trick or /treat")
-		gosub trick
-		return
-}
-if VAR5 = /treat
-{
-		if ENABLE_DEBUG_HELP = 1
-			LV_Add("", "? /trick or /treat")
-		gosub trick
-		return
-}
-if VAR3 = {D6D631}/cnrradio 
-{
-		if ENABLE_DEBUG_HELP = 1
-			LV_Add("", "? /cnrradio")
-		return
-}
-
-if VAR3 = {D6D631}/enter
-{
-		if ENABLE_DEBUG_HELP = 1
-			LV_Add("", "? /enter")
-		return
-}
-if VAR3 = /mission
-{
-		if ENABLE_DEBUG_HELP = 1
-			LV_Add("", "? /mission")
-		return
-}
-
-
-
-
-if VAR2 = Congratulations,
-{
-		if ENABLE_DEBUG_HELP = 1
-			LV_Add("", "? Award " VAR5 " " VAR6 " " VAR7 " " VAR8 " " VAR9 " " VAR10)
-		return
-}
-if VAR2 = Congratulations!
-{
-		if ENABLE_DEBUG_DICE = 1
-			LV_Add("", "? Dice Win " VAR5 " From " VAR7 " " VAR8)
-		return
-}
 if VAR2 = This
 {
 	if VAR3 = Vehicle
@@ -5043,97 +6399,27 @@ if VAR2 = This
 		return
 	}
 }
-if VAR2 = Audio
-{
-	if VAR3 = stream:
-	{
-		if ENABLE_DEBUG_HELP = 1
-			LV_Add("", "? Audio stream " VAR4)
-		return
-	}
-}
-if VAR2 = Clothes
-{
-	if VAR4 = Tax:
-	{
-		if ENABLE_DEBUG_MONEY = 1
-			LV_Add("", "$ Clothes Sales Tax " VAR5 " Out Of " VAR8)
-		return
-	}
-}
-if VAR3 = Traps
-{
-	if VAR6 = Enough
-	{
-		if ENABLE_DEBUG_PLANT = 1
-			LV_Add("", "# Traps Lost No Plants Left")
-		return
-	}
-}
-if VAR3 = Traps
-{
-	if VAR6 = Enough
-	{
-		if ENABLE_DEBUG_PLANT = 1
-			LV_Add("", "# Traps Lost No Plants Left")
-		return
-	}
-}
-if VAR2 = Killed
-{
-	if VAR3 = Unfairly
-	{
-		if ENABLE_DEBUG_HELP = 1
-			LV_Add("", "# Killed Unfairly - Continuing Current Life")
-		return
-	}
-}
-if VAR2 = Medical
-{
-	if VAR3 = Fees:
-	{
-		if ENABLE_DEBUG_HELP = 1
-			LV_Add("", "# Killed Unfairly - Continuing Current Life")
-		return
-	}
-}
-if VAR4 = Not
-{
-	if VAR6 = Valid:
-	{
-		if ENABLE_DEBUG_HELP = 1
-			LV_Add("", "# Help " VAR2 " Is Not A Valid Player.")
-		LASTDICEFAIL = 1
-		return
-	}
-}
 
-
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;END;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;END;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;END;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;END;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; PET ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 IfInString, VAR4 , Pet
 {
 	if ENABLE_DEBUG_PET = 1
-		LV_Add("","# Pet Died " VAR2 " " VAR3 " " VAR6 " " VAR7 " " VAR8 " " VAR9 " " VAR10 )
+		LV_Add("", "#  Pet Died " VAR2 " " VAR3 " " VAR6 " " VAR7 " " VAR8 " " VAR9 " " VAR10 )
 	;FileAppend ,%A_LoopReadLine%`n , %petlist%
 	return
 }
 if IfInString, VAR5 , Pet
 {
 	if ENABLE_DEBUG_PET = 1
-		LV_Add("","# Pet Died " VAR2 " " VAR3 " " VAR6 " " VAR7 " " VAR8 " " VAR9 " " VAR10 )
+		LV_Add("", "#  Pet Died " VAR2 " " VAR3 " " VAR6 " " VAR7 " " VAR8 " " VAR9 " " VAR10 )
 	;FileAppend ,%A_LoopReadLine%`n , %petlist%
 	return
 }
 IfInString, VAR8 , Pet
 {
 	if ENABLE_DEBUG_PET = 1
-		LV_Add("","# Pet Died " VAR2 " " VAR3 " Killed " VAR6 " " VAR7 " " VAR8 " " VAR9 " " VAR10 )
+		LV_Add("", "#  Pet Died " VAR2 " " VAR3 " Killed " VAR6 " " VAR7 " " VAR8 " " VAR9 " " VAR10 )
 	;FileAppend ,%A_LoopReadLine%`n , %petlist%
 	return
 }
@@ -5142,12 +6428,84 @@ IfInString, VAR8 , Pet
 if VAR2 = Sold
 {
 	if ENABLE_DEBUG_PET = 1
-		LV_Add("","# Pet Died " VAR2 " " VAR3 " Killed " VAR6 " " VAR7 " " VAR8 " " VAR9 " " VAR10 )
+		LV_Add("", "#  Pet Died " VAR2 " " VAR3 " Killed " VAR6 " " VAR7 " " VAR8 " " VAR9 " " VAR10 )
 	;FileAppend ,%A_LoopReadLine%`n , %soldlist%
 	return
 }
 
 
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; Chistmas Pets
+
+IfInString, VAR4 , Pet
+{
+	if ENABLE_DEBUG_PET = 1
+		LV_Add("", "#  Pet Died " VAR2 " " VAR3 " " VAR6 " " VAR7 " " VAR8 " " VAR9 " " VAR10 )
+	;FileAppend ,%A_LoopReadLine%`n , %petlist%
+	return
+}
+
+IfInString, VAR14 , Pet
+{
+	if ENABLE_DEBUG_PET = 1
+	{
+		LV_Add("", "# Christmas Pet " ADDLINE) ; Enari12345 (60) Has Been Ho Ho Ho'd To Death By eLyeS (145)'s Pet, Saint Nick The Santa.
+		;FileAppend ,%A_LoopReadLine%`n , %petlist%
+		
+	}
+	return
+}
+
+
+
+IfInString, VAR13 , Pet
+{
+	if ENABLE_DEBUG_PET = 1
+	{
+		LV_Add("", "# Christmas Pet " ADDLINE) ; Melister (66) Has Been Blessed To Death By *izzy* (102)'s Pet, Santa The Jesus.
+		;FileAppend ,%A_LoopReadLine%`n , %petlist%
+		
+	}
+	return
+}
+
+
+
+
+IfInString, VAR12 , Pet
+{
+	if ENABLE_DEBUG_PET = 1
+	{
+		LV_Add("", "# Christmas Pet " ADDLINE) ; Melister (66) Has Been Blessed To Death By *izzy* (102)'s Pet, Santa The Jesus.
+		;FileAppend ,%A_LoopReadLine%`n , %petlist%
+		
+	}
+	return
+}
+
+
+
+IfInString, VAR11 , Pet
+{
+	if ENABLE_DEBUG_PET = 1
+	{
+		LV_Add("", "# Christmas Pet " ADDLINE) ; Melister (66) Has Been Blessed To Death By *izzy* (102)'s Pet, Santa The Jesus.
+		;FileAppend ,%A_LoopReadLine%`n , %petlist%
+		
+	}
+	return
+}
+
+IfInString, VAR5 , Pet
+	if VAR4 = House
+	{
+		if ENABLE_DEBUG_PET = 1
+		{
+			LV_Add("", "# House Pet " ADDLINE) ; eLyeS (145)'s House Pet, Tuna The Baby Ninja, Was Too Fat And Died From A Heart Attack.
+			;FileAppend ,%A_LoopReadLine%`n , %petlist%
+			
+		}
+		return
+	}
 
 
 
@@ -5156,7 +6514,7 @@ if VAR2 = Sold
 IfInString , VAR2 , Complaint
 {
 		if ENABLE_DEBUG_COMPLAINT = 1
-			LV_Add("","# Complaint About " VAR2 " " VAR3 " Sent")
+			LV_Add("", "#  Complaint About " VAR2 " " VAR3 " Sent")
 		IfNotInString , COMPLAINT , %VAR2%
 			COMPLAINT = %COMPLAINT% %VAR2% %a_space%
 		;FileAppend ,%A_LoopReadLine%`n , %complaint%
@@ -5164,6 +6522,29 @@ IfInString , VAR2 , Complaint
 }
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; NoMatch ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+if VAR2 = *
+{
+	if VAR6 = Joined
+	{
+		if ENABLE_DEBUG_PLAYER = 1
+			LV_Add("", "* Join: " VAR3 " " VAR4)
+		JOINERS = %JOINERS% %VAR3% %A_Space%
+		if AUTOIGNORE = 1
+			gosub CHECKIGNORE
+		gosub WATCHLOGON
+		return
+	}
+	if VAR6 = Left
+	if VAR6 = Left
+	{
+		if ENABLE_DEBUG_PLAYER = 1
+		LV_Add("", "* Quit: " VAR3 " " VAR4)
+		QUITTERS = %QUITTERS% %VAR3% %A_Space%
+		if GIFTEE = %VAR3%
+			SetTimer, givegift, off
+		return
+	}
+}
 
 if VAR2S = *
 {
@@ -5173,7 +6554,8 @@ if VAR2S = *
 		if ENABLE_DEBUG_PLAYER = 1
 			LV_Add("", "* Join: " VAR3 " " VAR4)
 		JOINERS = %JOINERS% %VAR3% %A_Space%
-		gosub CHECKIGNORE
+		if AUTOIGNORE = 1
+			gosub CHECKIGNORE
 		gosub WATCHLOGON
 		return
 	}
@@ -5334,7 +6716,7 @@ NOMATCHPHRASELINES ++
 
 StringTrimLeft , B_LoopReadLine , A_LoopReadLine, 11
 if ENABLE_DEBUG_NOMATCH = 1
-	LV_Add("","# No Match " A_LoopReadLine)
+	LV_Add("", "#  No Match " A_LoopReadLine)
 if FILTERNOMATCH = 1
 FileAppend, %B_LoopReadLine%`n , %nomatch%
 B_LoopReadLine =
@@ -5348,6 +6730,109 @@ if ENABLE_DEBUG = 1
 VARFIX = %OLDVAR%
 VARFIX := RegExReplace(VARFIX, "[{][A-F 0-9][A-F 0-9][A-F 0-9][A-F 0-9][A-F 0-9][A-F 0-9][}]", "") 
 NEWVAR = %VARFIX%
+return
+
+KEYSTATECHECK:
+ISKEYDOWN = 0
+GetKeyState, ISNUMON, NumLock , T
+GetKeyState, ISCAPSON, CapsLock , T
+GetKeyState, ISSCROLON, ScrollLock , T
+GetKeyState, ISINSTERTON, Insert , T
+
+GetKeyState, ISADOWN, A, P
+if ISADOWN = D
+	ISKEYDOWN++
+GetKeyState, ISBDOWN, B, P
+if ISBDOWN = D
+	ISKEYDOWN++
+
+GetKeyState, ISCDOWN, C, P
+if ISCDOWN = D
+	ISKEYDOWN++
+
+GetKeyState, ISDDOWN, D, P
+if ISDDOWN = D
+	ISKEYDOWN++
+
+GetKeyState, ISEDOWN, E, P
+if ISEDOWN = D
+	ISKEYDOWN++
+GetKeyState, ISFDOWN, F, P
+if ISFDOWN = D
+	ISKEYDOWN++
+
+GetKeyState, ISGDOWN, G, P
+if ISGDOWN = D
+	ISKEYDOWN++
+
+GetKeyState, ISHDOWN, H, P
+if ISHDOWN = D
+	ISKEYDOWN++
+GetKeyState, ISIDOWN, I, P
+if ISIDOWN = D
+	ISKEYDOWN++
+GetKeyState, ISJDOWN, J, P
+if ISJDOWN = D
+	ISKEYDOWN++
+
+GetKeyState, ISKDOWN, K, P
+if ISKDOWN = D
+	ISKEYDOWN++
+GetKeyState, ISLDOWN, L, P
+if ISLDOWN = D
+	ISKEYDOWN++
+
+GetKeyState, ISMDOWN, M, P
+if ISMDOWN = D
+	ISKEYDOWN++
+
+GetKeyState, ISNDOWN, N, P
+if ISNDOWN = D
+	ISKEYDOWN++
+
+GetKeyState, ISODOWN, O, P
+if ISODOWN = D
+	ISKEYDOWN++
+GetKeyState, ISPDOWN, P, P
+if ISPDOWN = D
+	ISKEYDOWN++
+GetKeyState, ISQDOWN, Q, P
+if ISQDOWN = D
+	ISKEYDOWN++
+GetKeyState, ISRDOWN, R, P
+if ISRDOWN = D
+	ISKEYDOWN++
+GetKeyState, ISSDOWN, S, P
+if ISSDOWN = D
+	ISKEYDOWN++
+GetKeyState, ISTDOWN, T, P
+if ISTDOWN = D
+	ISKEYDOWN++
+GetKeyState, ISUDOWN, U, P
+if ISUDOWN = D
+	ISKEYDOWN++
+GetKeyState, ISVDOWN, V, P
+if ISVDOWN = D
+	ISKEYDOWN++
+GetKeyState, ISWDOWN, W, P
+if ISWDOWN = D
+	ISKEYDOWN++
+GetKeyState, ISXDOWN, X, P
+if ISXDOWN = D
+	ISKEYDOWN++
+GetKeyState, ISYDOWN, Y, P
+if ISYDOWN = D
+	ISKEYDOWN++
+GetKeyState, ISEDOWN, Z, P
+if ISZDOWN = D
+	ISKEYDOWN++
+
+GetKeyState, IS_SPACEDOWN, Space, P
+if IS_SPACEDOWN = D
+	ISKEYDOWN++
+GetKeyState, IS_ENTERDOWN, Enter, P
+if IS_ENTERDOWN = D
+	ISKEYDOWN++
 return
 
 KEYBINDCHECK:
@@ -5513,8 +6998,87 @@ if BINDSOFF = 0
 			Hotkey ,$F12, F12
 	}
 	
-		if KEYPROGRAMON=1
-		{
+GetKeyState, ISNUMON, NumLock , T
+if ISNUMON=D
+{
+	if KEYNUM = 1
+	{
+		if BINDNUM1E = 1
+			Hotkey $Numpad1 , NUMPAD1
+		if BINDNUM2E = 1
+			Hotkey $Numpad2 , NUMPAD2
+		if BINDNUM3E = 1
+			Hotkey $Numpad3 , NUMPAD3
+		if BINDNUM4E = 1
+			Hotkey $Numpad4 , NUMPAD4
+		if BINDNUM5E = 1
+			Hotkey $Numpad5 , NUMPAD5
+		if BINDNUM6E = 1
+			Hotkey $Numpad6 , NUMPAD6
+		if BINDNUM7E = 1
+			Hotkey $Numpad7 , NUMPAD7
+		if BINDNUM8E = 1
+			Hotkey $Numpad8 , NUMPAD8
+		if BINDNUM9E = 1
+			Hotkey $Numpad9 , NUMPAD9
+		if BINDNUM10E = 1
+			Hotkey $Numpad0 , NUMPAD10
+		if BINDNUM11E = 1
+			Hotkey $NumpadSub , NUMPAD11
+		if BINDNUM12E = 1
+			Hotkey $NumpadDiv , NUMPAD12
+		if BINDNUM13E = 1
+			Hotkey $NumpadMult , NUMPAD13
+		if BINDNUM14E = 1
+			Hotkey $NumpadEnter , NUMPAD14
+		if BINDNUM15E = 1
+			Hotkey $NumpadDot , NUMPAD15
+		if BINDNUM16E = 1
+			Hotkey $NumpadAdd , NUMPAD16
+	}
+}
+if ISNUMON=U
+{
+	if KEYNUMO = 1
+	{
+		if BINDNUMO1E = 1
+			Hotkey $NumpadEnd , NUMPADO1
+		if BINDNUMO2E = 1
+			Hotkey $NumpadDown , NUMPADO2
+		if BINDNUMO3E = 1
+			Hotkey $NumpadPgdn , NUMPADO3
+		if BINDNUMO4E = 1
+			Hotkey $NumpadLeft , NUMPADO4
+		if BINDNUMO5E = 1
+			Hotkey $NumpadClear , NUMPADO5
+		if BINDNUMO6E = 1
+			Hotkey $NumpadRight , NUMPADO6
+		if BINDNUMO7E = 1
+			Hotkey $NumpadHome , NUMPADO7
+		if BINDNUMO8E = 1
+			Hotkey $NumpadUp , NUMPADO8
+		if BINDNUMO9E = 1
+			Hotkey $NumpadPgup , NUMPADO9
+		if BINDNUMO10E = 1
+			Hotkey $NumpadIns , NUMPADO10
+		if BINDNUMO11E = 1
+			Hotkey $NumpadSub , NUMPADO11
+		if BINDNUMO12E = 1
+			Hotkey $NumpadDiv , NUMPADO12
+		if BINDNUMO13E = 1
+			Hotkey $NumpadMult , NUMPADO13
+		if BINDNUMO14E = 1
+			Hotkey $NumpadEnter , NUMPADO14
+		if BINDNUMO15E = 1
+			Hotkey $NumpadDel , NUMPADO15
+		if BINDNUMO16E = 1
+			Hotkey $NumpadAdd , NUMPADO16
+	}
+}
+		
+	
+	if KEYPROGRAMON=1
+	{
 			BINDALL = %BIND1E%%a_space%%BIND2E%%a_space%%BIND3E%%a_space%%BIND4E%%a_space%%BIND5E%%a_space%%BIND6E%%a_space%%BIND7E%%a_space%%BIND8E%%a_space%%BIND9E%%a_space%%BIND10E%%a_space%%BIND11E%%a_space%%BIND12E%
 			loop parse, BINDALL, %a_space% 
 			{
@@ -6073,7 +7637,7 @@ INIWRITE, %FPSHIGH%, %inifile%, 		SETTINGS, FPSHIGH
 INIWRITE, %COLOR1%, %inifile%, 			SETTINGS, COLOR1
 INIWRITE, %COLOR2%, %inifile%, 			SETTINGS, COLOR2
 INIWRITE, %PLAYDICEAMOUNT%, %inifile%, 	SETTINGS, PLAYDICEAMOUNT
-INIWRITE, %TAKEDRUGSAMOUNT%, %inifile%, 	SETTINGS, TAKEDRUGSAMOUNT
+INIWRITE, %TAKEDRUGSAMOUNT%, %inifile%, SETTINGS, TAKEDRUGSAMOUNT
 
 INIWRITE, %BRIBEAMOUNT%, %inifile%, 	SETTINGS, BRIBEAMOUNT
 INIWRITE, %GUILOTTO%, %inifile%, 		SETTINGS, GUILOTTO
@@ -6087,7 +7651,10 @@ INIWRITE, %KEYMENUON%, %inifile%, 		SETTINGS, KEYMENUON
 INIWRITE, %KEYFPSON% , %inifile%, 		SETTINGS, KEYFPSON 
 INIWRITE, %KEYANTIPAUSEON%, %inifile%,  SETTINGS, KEYANTIPAUSEON
 INIWRITE, %KEYDLTOGGLE%, %inifile%, 	SETTINGS, KEYDLTOGGLE
-INIWRITE, %KEYWINKEY%, %inifile%, 	SETTINGS, KEYWINKEY
+INIWRITE, %KEYWINKEY%, %inifile%, 		SETTINGS, KEYWINKEY
+INIWRITE, %KEYNUM%, %inifile%, 			SETTINGS, KEYNUM
+INIWRITE, %KEYNUMO%, %inifile%, 		SETTINGS, KEYNUMO
+
 
 
 ;[AUTOMATION]
@@ -6113,6 +7680,7 @@ INIWRITE, %AUTOFISHON%, %inifile%, 		AUTOMATION, AUTOFISHON
 INIWRITE, %AUTOTHROWON%, %inifile%, 	AUTOMATION, AUTOTHROWON
 INIWRITE, %AUTOFISHDISPLAY%, %inifile%, AUTOMATION, AUTOFISHDISPLAY
 INIWRITE, %AUTOGPSCARSELL%, %inifile%, AUTOMATION, AUTOGPSCARSELL
+INIWRITE, %AUTOIGNORE%, %inifile%, AUTOMATION, AUTOIGNORE
 ;[STATS]
 INIWRITE, %SHOWSTOCKS%, %inifile%, 		STATS, SHOWSTOCKS
 INIWRITE, %SHOWWORKERS%, %inifile%, 	STATS, SHOWWORKERS
@@ -6216,6 +7784,74 @@ INIWRITE, %BIND10%, %inifile%, 		Keybinds	, BIND10Bind
 INIWRITE, %BIND11%, %inifile%, 		Keybinds	, BIND11Bind
 INIWRITE, %BIND12%, %inifile%, 		Keybinds	, BIND12Bind
 
+
+INIWRITE, %BINDNUM1E%, %inifile%, 		KeyBINDNUM ,  BINDNUM1Enabled
+INIWRITE, %BINDNUM2E%, %inifile%, 		KeyBINDNUM ,  BINDNUM2Enabled
+INIWRITE, %BINDNUM3E%, %inifile%, 		KeyBINDNUM ,  BINDNUM3Enabled
+INIWRITE, %BINDNUM4E%, %inifile%, 		KeyBINDNUM ,  BINDNUM4Enabled
+INIWRITE, %BINDNUM5E%, %inifile%, 		KeyBINDNUM ,  BINDNUM5Enabled
+INIWRITE, %BINDNUM6E%, %inifile%, 		KeyBINDNUM ,  BINDNUM6Enabled
+INIWRITE, %BINDNUM7E%, %inifile%, 		KeyBINDNUM ,  BINDNUM7Enabled
+INIWRITE, %BINDNUM8E%, %inifile%, 		KeyBINDNUM ,  BINDNUM8Enabled
+INIWRITE, %BINDNUM9E%, %inifile%, 		KeyBINDNUM ,  BINDNUM9Enabled
+INIWRITE, %BINDNUM10E%, %inifile%, 		KeyBINDNUM , BINDNUM10Enabled
+INIWRITE, %BINDNUM11E%, %inifile%, 		KeyBINDNUM , BINDNUM11Enabled
+INIWRITE, %BINDNUM12E%, %inifile%, 		KeyBINDNUM , BINDNUM12Enabled
+INIWRITE, %BINDNUM13E%, %inifile%, 		KeyBINDNUM ,  BINDNUM13Enabled
+INIWRITE, %BINDNUM14E%, %inifile%, 		KeyBINDNUM , BINDNUM14Enabled
+INIWRITE, %BINDNUM15E%, %inifile%, 		KeyBINDNUM , BINDNUM15Enabled
+INIWRITE, %BINDNUM16E%, %inifile%, 		KeyBINDNUM , BINDNUM16Enabled
+INIWRITE, %BINDNUM1%, %inifile%, 		KeyBINDNUM	, BINDNUM1BINDNUM
+INIWRITE, %BINDNUM2%, %inifile%, 		KeyBINDNUM	, BINDNUM2BINDNUM
+INIWRITE, %BINDNUM3%, %inifile%, 		KeyBINDNUM	, BINDNUM3BINDNUM
+INIWRITE, %BINDNUM4%, %inifile%, 		KeyBINDNUM	, BINDNUM4BINDNUM
+INIWRITE, %BINDNUM5%, %inifile%, 		KeyBINDNUM	, BINDNUM5BINDNUM
+INIWRITE, %BINDNUM6%, %inifile%, 		KeyBINDNUM	, BINDNUM6BINDNUM
+INIWRITE, %BINDNUM7%, %inifile%, 		KeyBINDNUM	, BINDNUM7BINDNUM
+INIWRITE, %BINDNUM8%, %inifile%, 		KeyBINDNUM	, BINDNUM8BINDNUM
+INIWRITE, %BINDNUM9%, %inifile%, 		KeyBINDNUM	, BINDNUM9BINDNUM
+INIWRITE, %BINDNUM10%, %inifile%, 		KeyBINDNUM	, BINDNUM10BINDNUM
+INIWRITE, %BINDNUM11%, %inifile%, 		KeyBINDNUM	, BINDNUM11BINDNUM
+INIWRITE, %BINDNUM12%, %inifile%, 		KeyBINDNUM	, BINDNUM12BINDNUM
+INIWRITE, %BINDNUM13%, %inifile%, 		KeyBINDNUM	, BINDNUM13BINDNUM
+INIWRITE, %BINDNUM14%, %inifile%, 		KeyBINDNUM	, BINDNUM14BINDNUM
+INIWRITE, %BINDNUM15%, %inifile%, 		KeyBINDNUM	, BINDNUM15BINDNUM
+INIWRITE, %BINDNUM16%, %inifile%, 		KeyBINDNUM	, BINDNUM16BINDNUM
+
+
+INIWRITE, %BINDNUMO1E%, %inifile%, 		KeyBINDNUMO ,  BINDNUMO1Enabled
+INIWRITE, %BINDNUMO2E%, %inifile%, 		KeyBINDNUMO ,  BINDNUMO2Enabled
+INIWRITE, %BINDNUMO3E%, %inifile%, 		KeyBINDNUMO ,  BINDNUMO3Enabled
+INIWRITE, %BINDNUMO4E%, %inifile%, 		KeyBINDNUMO ,  BINDNUMO4Enabled
+INIWRITE, %BINDNUMO5E%, %inifile%, 		KeyBINDNUMO ,  BINDNUMO5Enabled
+INIWRITE, %BINDNUMO6E%, %inifile%, 		KeyBINDNUMO ,  BINDNUMO6Enabled
+INIWRITE, %BINDNUMO7E%, %inifile%, 		KeyBINDNUMO ,  BINDNUMO7Enabled
+INIWRITE, %BINDNUMO8E%, %inifile%, 		KeyBINDNUMO ,  BINDNUMO8Enabled
+INIWRITE, %BINDNUMO9E%, %inifile%, 		KeyBINDNUMO ,  BINDNUMO9Enabled
+INIWRITE, %BINDNUMO10E%, %inifile%, 		KeyBINDNUMO , BINDNUMO10Enabled
+INIWRITE, %BINDNUMO11E%, %inifile%, 		KeyBINDNUMO , BINDNUMO11Enabled
+INIWRITE, %BINDNUMO12E%, %inifile%, 		KeyBINDNUMO , BINDNUMO12Enabled
+INIWRITE, %BINDNUMO13E%, %inifile%, 		KeyBINDNUMO ,  BINDNUMO13Enabled
+INIWRITE, %BINDNUMO14E%, %inifile%, 		KeyBINDNUMO , BINDNUMO14Enabled
+INIWRITE, %BINDNUMO15E%, %inifile%, 		KeyBINDNUMO , BINDNUMO15Enabled
+INIWRITE, %BINDNUMO16E%, %inifile%, 		KeyBINDNUMO , BINDNUMO16Enabled
+INIWRITE, %BINDNUMO1%, %inifile%, 		KeyBINDNUMO	, BINDNUMO1BINDNUMO
+INIWRITE, %BINDNUMO2%, %inifile%, 		KeyBINDNUMO	, BINDNUMO2BINDNUMO
+INIWRITE, %BINDNUMO3%, %inifile%, 		KeyBINDNUMO	, BINDNUMO3BINDNUMO
+INIWRITE, %BINDNUMO4%, %inifile%, 		KeyBINDNUMO	, BINDNUMO4BINDNUMO
+INIWRITE, %BINDNUMO5%, %inifile%, 		KeyBINDNUMO	, BINDNUMO5BINDNUMO
+INIWRITE, %BINDNUMO6%, %inifile%, 		KeyBINDNUMO	, BINDNUMO6BINDNUMO
+INIWRITE, %BINDNUMO7%, %inifile%, 		KeyBINDNUMO	, BINDNUMO7BINDNUMO
+INIWRITE, %BINDNUMO8%, %inifile%, 		KeyBINDNUMO	, BINDNUMO8BINDNUMO
+INIWRITE, %BINDNUMO9%, %inifile%, 		KeyBINDNUMO	, BINDNUMO9BINDNUMO
+INIWRITE, %BINDNUMO10%, %inifile%, 		KeyBINDNUMO	, BINDNUMO10BINDNUMO
+INIWRITE, %BINDNUMO11%, %inifile%, 		KeyBINDNUMO	, BINDNUMO11BINDNUMO
+INIWRITE, %BINDNUMO12%, %inifile%, 		KeyBINDNUMO	, BINDNUMO12BINDNUMO
+INIWRITE, %BINDNUMO13%, %inifile%, 		KeyBINDNUMO	, BINDNUMO13BINDNUMO
+INIWRITE, %BINDNUMO14%, %inifile%, 		KeyBINDNUMO	, BINDNUMO14BINDNUMO
+INIWRITE, %BINDNUMO15%, %inifile%, 		KeyBINDNUMO	, BINDNUMO15BINDNUMO
+INIWRITE, %BINDNUMO16%, %inifile%, 		KeyBINDNUMO	, BINDNUMO16BINDNUMO
+
 ;[Performance]
 INIWRITE, %SLEEPLINECOUNT%, %inifile%, 	PERFOMANCE, SLEEPLINECOUNT
 INIWRITE, %SLEEPLOGSIZE%, %inifile%, 	PERFOMANCE, SLEEPLOGSIZE
@@ -6237,6 +7873,7 @@ INIWRITE, %logdir%, %inifile%, 		FILES, logdir
 INIWRITE, %history%, %inifile%, 	FILES, history
 INIWRITE, %whitelist%, %inifile%, 	FILES, whitelist
 INIWRITE, %blacklist%, %inifile%, 	FILES, blacklist
+INIWRITE, %spamlist%, %inifile%, 	FILES, spamlist
 return
 
 INIREAD:
@@ -6250,8 +7887,8 @@ INIREAD, COLORLIST, %inifile%, GUI, COLORLIST, black|white|police car blue|cherr
 
 ;[GUI]
 INIREAD, GUIFONT, %inifile%, 		GUI, GUIFONT, 12
-INIREAD, SERVER1, %inifile%, 		GUI, SERVER1, 50.31.100.10:7788
-INIREAD, SERVER2, %inifile%, 		GUI, SERVER2, 50.31.100.10:7799
+INIREAD, SERVER1, %inifile%, 		GUI, SERVER1, s1.crazybobs.net:7777
+INIREAD, SERVER2, %inifile%, 		GUI, SERVER2, s2.crazybobs.net:7777
 INIREAD, X, 		 %inifile%,		GUI,  X, 100
 INIREAD, Y, 		 %inifile%,		GUI,  Y, 100
 INIREAD, Width, 	 %inifile%,		GUI, Width , 700
@@ -6281,7 +7918,11 @@ INIREAD, KEYMENUON, %inifile%, 			SETTINGS, KEYMENUON			, 1
 INIREAD, KEYFPSON , %inifile%, 			SETTINGS, KEYFPSON 			, 0
 INIREAD, KEYANTIPAUSEON, %inifile%,  	SETTINGS, KEYANTIPAUSEON	, 0
 INIREAD, KEYDLTOGGLE, %inifile%, 		SETTINGS, KEYDLTOGGLE		, 0
-INIREAD, KEYWINKEY, %inifile%, 			SETTINGS, KEYWINKEY		, 0
+INIREAD, KEYWINKEY, %inifile%, 			SETTINGS, KEYWINKEY			, 0
+INIREAD, KEYNUM, %inifile%, 			SETTINGS, KEYNUM			, 0
+INIREAD, KEYNUMO, %inifile%, 			SETTINGS, KEYNUMO			, 0
+
+
 
 ;[AUTOMATION]
 INIREAD, AUTOLOGONON, %inifile%, 		AUTOMATION, AUTOLOGONON			, 1
@@ -6306,6 +7947,7 @@ INIREAD, AUTOFISHON, %inifile%, 		AUTOMATION, AUTOFISHON			, 1
 INIREAD, AUTOTHROWON, %inifile%, 		AUTOMATION, AUTOTHROWON			, 1
 INIREAD, AUTOFISHDISPLAY, %inifile%, 	AUTOMATION, AUTOFISHDISPLAY		, 0
 INIREAD, AUTOGPSCARSELL, %inifile%,		AUTOMATION, AUTOGPSCARSELL		, 1
+INIREAD, AUTOIGNORE, %inifile%,			AUTOMATION, AUTOIGNORE			, 0
 
 ;[STATS]
 INIREAD, SHOWSTOCKS, %inifile%, 	STATS, SHOWSTOCKS	, 0
@@ -6411,6 +8053,73 @@ INIREAD, BIND10, %inifile%, 		Keybinds	, BIND10Bind	, t/{enter}
 INIREAD, BIND11, %inifile%, 		Keybinds	, BIND11Bind	, t/{enter}
 INIREAD, BIND12, %inifile%, 		Keybinds	, BIND12Bind	, t/{enter}
 
+
+INIREAD, BINDNUM1E, %inifile%, 		KeyBINDNUM ,  BINDNUM1Enabled	, 0
+INIREAD, BINDNUM2E, %inifile%, 		KeyBINDNUM ,  BINDNUM2Enabled	, 0
+INIREAD, BINDNUM3E, %inifile%, 		KeyBINDNUM ,  BINDNUM3Enabled	, 0	
+INIREAD, BINDNUM4E, %inifile%, 		KeyBINDNUM ,  BINDNUM4Enabled	, 0
+INIREAD, BINDNUM5E, %inifile%, 		KeyBINDNUM ,  BINDNUM5Enabled	, 0
+INIREAD, BINDNUM6E, %inifile%, 		KeyBINDNUM ,  BINDNUM6Enabled	, 0
+INIREAD, BINDNUM7E, %inifile%, 		KeyBINDNUM ,  BINDNUM7Enabled	, 0
+INIREAD, BINDNUM8E, %inifile%, 		KeyBINDNUM ,  BINDNUM8Enabled	, 0
+INIREAD, BINDNUM9E, %inifile%, 		KeyBINDNUM ,  BINDNUM9Enabled	, 0
+INIREAD, BINDNUM10E, %inifile%, 		KeyBINDNUM , BINDNUM10Enabled	, 0
+INIREAD, BINDNUM11E, %inifile%, 		KeyBINDNUM , BINDNUM11Enabled	, 0
+INIREAD, BINDNUM12E, %inifile%, 		KeyBINDNUM , BINDNUM12Enabled	, 0
+INIREAD, BINDNUM13E, %inifile%, 		KeyBINDNUM , BINDNUM13Enabled	, 0
+INIREAD, BINDNUM14E, %inifile%, 		KeyBINDNUM , BINDNUM14Enabled	, 0
+INIREAD, BINDNUM15E, %inifile%, 		KeyBINDNUM , BINDNUM15Enabled	, 0
+INIREAD, BINDNUM16E, %inifile%, 		KeyBINDNUM , BINDNUM16Enabled	, 0
+INIREAD, BINDNUM1, %inifile%, 			KeyBINDNUM	, BINDNUM1BINDNUM		, t/{enter}
+INIREAD, BINDNUM2, %inifile%, 			KeyBINDNUM	, BINDNUM2BINDNUM		, t/{enter}
+INIREAD, BINDNUM3, %inifile%, 			KeyBINDNUM	, BINDNUM3BINDNUM		, t/{enter}
+INIREAD, BINDNUM4, %inifile%, 			KeyBINDNUM	, BINDNUM4BINDNUM		, t/{enter}
+INIREAD, BINDNUM5, %inifile%, 			KeyBINDNUM	, BINDNUM5BINDNUM		, t/{enter}
+INIREAD, BINDNUM6, %inifile%, 			KeyBINDNUM	, BINDNUM6BINDNUM		, t/{enter}
+INIREAD, BINDNUM7, %inifile%, 			KeyBINDNUM	, BINDNUM7BINDNUM		, t/{enter}
+INIREAD, BINDNUM8, %inifile%, 			KeyBINDNUM	, BINDNUM8BINDNUM		, t/{enter}
+INIREAD, BINDNUM9, %inifile%, 			KeyBINDNUM	, BINDNUM9BINDNUM		, t/{enter}
+INIREAD, BINDNUM10, %inifile%, 		KeyBINDNUM	, BINDNUM10BINDNUM	, t/{enter}
+INIREAD, BINDNUM11, %inifile%, 		KeyBINDNUM	, BINDNUM11BINDNUM	, t/{enter}
+INIREAD, BINDNUM12, %inifile%, 		KeyBINDNUM	, BINDNUM12BINDNUM	, t/{enter}
+INIREAD, BINDNUM13, %inifile%, 		KeyBINDNUM	, BINDNUM13BINDNUM	, t/{enter}
+INIREAD, BINDNUM14, %inifile%, 		KeyBINDNUM	, BINDNUM14BINDNUM	, t/{enter}
+INIREAD, BINDNUM15, %inifile%, 		KeyBINDNUM	, BINDNUM15BINDNUM	, t/{enter}
+INIREAD, BINDNUM16, %inifile%, 		KeyBINDNUM	, BINDNUM16BINDNUM	, t/{enter}
+
+INIREAD, BINDNUMO1E, %inifile%, 		KeyBINDNUMO ,  BINDNUMO1Enabled	, 0
+INIREAD, BINDNUMO2E, %inifile%, 		KeyBINDNUMO ,  BINDNUMO2Enabled	, 0
+INIREAD, BINDNUMO3E, %inifile%, 		KeyBINDNUMO ,  BINDNUMO3Enabled	, 0	
+INIREAD, BINDNUMO4E, %inifile%, 		KeyBINDNUMO ,  BINDNUMO4Enabled	, 0
+INIREAD, BINDNUMO5E, %inifile%, 		KeyBINDNUMO ,  BINDNUMO5Enabled	, 0
+INIREAD, BINDNUMO6E, %inifile%, 		KeyBINDNUMO ,  BINDNUMO6Enabled	, 0
+INIREAD, BINDNUMO7E, %inifile%, 		KeyBINDNUMO ,  BINDNUMO7Enabled	, 0
+INIREAD, BINDNUMO8E, %inifile%, 		KeyBINDNUMO ,  BINDNUMO8Enabled	, 0
+INIREAD, BINDNUMO9E, %inifile%, 		KeyBINDNUMO ,  BINDNUMO9Enabled	, 0
+INIREAD, BINDNUMO10E, %inifile%, 		KeyBINDNUMO , BINDNUMO10Enabled	, 0
+INIREAD, BINDNUMO11E, %inifile%, 		KeyBINDNUMO , BINDNUMO11Enabled	, 0
+INIREAD, BINDNUMO12E, %inifile%, 		KeyBINDNUMO , BINDNUMO12Enabled	, 0
+INIREAD, BINDNUMO13E, %inifile%, 		KeyBINDNUMO , BINDNUMO13Enabled	, 0
+INIREAD, BINDNUMO14E, %inifile%, 		KeyBINDNUMO , BINDNUMO14Enabled	, 0
+INIREAD, BINDNUMO15E, %inifile%, 		KeyBINDNUMO , BINDNUMO15Enabled	, 0
+INIREAD, BINDNUMO16E, %inifile%, 		KeyBINDNUMO , BINDNUMO16Enabled	, 0
+INIREAD, BINDNUMO1, %inifile%, 			KeyBINDNUMO	, BINDNUMO1BINDNUMO		, t/{enter}
+INIREAD, BINDNUMO2, %inifile%, 			KeyBINDNUMO	, BINDNUMO2BINDNUMO		, t/{enter}
+INIREAD, BINDNUMO3, %inifile%, 			KeyBINDNUMO	, BINDNUMO3BINDNUMO		, t/{enter}
+INIREAD, BINDNUMO4, %inifile%, 			KeyBINDNUMO	, BINDNUMO4BINDNUMO		, t/{enter}
+INIREAD, BINDNUMO5, %inifile%, 			KeyBINDNUMO	, BINDNUMO5BINDNUMO		, t/{enter}
+INIREAD, BINDNUMO6, %inifile%, 			KeyBINDNUMO	, BINDNUMO6BINDNUMO		, t/{enter}
+INIREAD, BINDNUMO7, %inifile%, 			KeyBINDNUMO	, BINDNUMO7BINDNUMO		, t/{enter}
+INIREAD, BINDNUMO8, %inifile%, 			KeyBINDNUMO	, BINDNUMO8BINDNUMO		, t/{enter}
+INIREAD, BINDNUMO9, %inifile%, 			KeyBINDNUMO	, BINDNUMO9BINDNUMO		, t/{enter}
+INIREAD, BINDNUMO10, %inifile%, 		KeyBINDNUMO	, BINDNUMO10BINDNUMO	, t/{enter}
+INIREAD, BINDNUMO11, %inifile%, 		KeyBINDNUMO	, BINDNUMO11BINDNUMO	, t/{enter}
+INIREAD, BINDNUMO12, %inifile%, 		KeyBINDNUMO	, BINDNUMO12BINDNUMO	, t/{enter}
+INIREAD, BINDNUMO13, %inifile%, 		KeyBINDNUMO	, BINDNUMO13BINDNUMO	, t/{enter}
+INIREAD, BINDNUMO14, %inifile%, 		KeyBINDNUMO	, BINDNUMO14BINDNUMO	, t/{enter}
+INIREAD, BINDNUMO15, %inifile%, 		KeyBINDNUMO	, BINDNUMO15BINDNUMO	, t/{enter}
+INIREAD, BINDNUMO16, %inifile%, 		KeyBINDNUMO	, BINDNUMO16BINDNUMO	, t/{enter}
+
 ;[Performance]
 INIREAD, SLEEPLINECOUNT, %inifile%,	PERFOMANCE, SLEEPLINECOUNT ,100
 INIREAD, SLEEPLOGSIZE, %inifile%, 	PERFOMANCE, SLEEPLOGSIZE , 500
@@ -6432,11 +8141,12 @@ INIREAD, logfile, %inifile%, 	FILES, logfile , %logdir%\chatlog.txt
 INIREAD, history, %inifile%, 	FILES, history , %logdir%\History
 INIREAD, whitelist, %inifile%, 	FILES, whitelist , %logdir%\whitelist.txt
 INIREAD, blacklist, %inifile%, 	FILES, blacklist , %logdir%\blacklist.txt
-INIREAD, nomatch, %inifile%, 	FILES, blacklist , %logdir%\nomatch.txt
-INIREAD, complaint, %inifile%, 	FILES, blacklist , %logdir%\complaint.txt
-INIREAD, petlist, %inifile%, 	FILES, blacklist , %logdir%\petlist.txt
-INIREAD, carlist, %inifile%, 	FILES, blacklist , %logdir%\carlist.txt
-INIREAD, soldlist, %inifile%, 	FILES, blacklist , %logdir%\soldlist.txt
+INIREAD, nomatch, %inifile%, 	FILES, nomatch , %logdir%\nomatch.txt
+INIREAD, complaint, %inifile%, 	FILES, complaint , %logdir%\complaint.txt
+INIREAD, petlist, %inifile%, 	FILES, petlist , %logdir%\petlist.txt
+INIREAD, carlist, %inifile%, 	FILES, carlist , %logdir%\carlist.txt
+INIREAD, soldlist, %inifile%, 	FILES, soldlist , %logdir%\soldlist.txt
+INIREAD, spamlist, %inifile%, 	FILES, spammers , %logdir%\spammers.txt
 
 
 
@@ -6569,7 +8279,7 @@ gosub CHATIN
 StringReplace, PLAYER, PLAYER, ! , {!}, ReplaceAll
 StringReplace, PLAYER, PLAYER, ^ , {^}, ReplaceAll 
 StringReplace, PLAYER, PLAYER, + , {+}, ReplaceAll 
-SendInput t/ign %PLAYER%{enter}
+sendinput t/ign %PLAYER%{enter}
 gosub CHATOUT
 LV_Add("", "<< "ADDLINE)
 LV_Add("", " !AUTOIGNORE " PLAYER "  ")
@@ -6587,7 +8297,7 @@ gpscarsell:
 	if game = 0
 	return
 	gosub CHATIN
-	SendInput t/gps{enter}t 1{enter}t 5{enter}
+	sendinput t/gps{enter}t 1{enter}t 5{enter}
 	gosub CHATOUT
 	return
 gpsmission:
@@ -6601,9 +8311,9 @@ gpsmission:
 	return
 	gosub CHATIN
 	IF INTRUCK = 1
-		SendInput t/gps{enter}t 1{enter}t 1{enter}
+		sendinput t/gps{enter}t 1{enter}t 1{enter}
 	IF INCOURIER = 1
-		SendInput t/gps{enter}t 1{enter}t 1{enter}
+		sendinput t/gps{enter}t 1{enter}t 1{enter}
 	gosub CHATOUT
 	return
 gpsclear:
@@ -6614,7 +8324,7 @@ gpsclear:
 		if game = 0
 	return
 	gosub CHATIN
-	SendInput t/gpsclear{enter}
+	sendinput t/gpsclear{enter}
 	gosub CHATOUT
 	return
 sit8:
@@ -6625,7 +8335,7 @@ sit8:
 	if game = 0
 	return
 	gosub CHATIN
-	SendInput t/sit 8{enter}
+	sendinput t/sit 8{enter}
 	gosub CHATOUT
 	return
 sit:
@@ -6636,7 +8346,7 @@ sit:
 	if game = 0
 	return
 	gosub CHATIN
-	SendInput t/sit{enter}
+	sendinput t/sit{enter}
 	gosub CHATOUT
 	return
 sell:
@@ -6647,7 +8357,7 @@ sell:
 	if game = 0
 	return
 	gosub CHATIN
-	SendInput t/sell $ply{enter}
+	sendinput t/sell $ply{enter}
 	gosub CHATOUT
 	return
 offer:
@@ -6658,7 +8368,7 @@ offer:
 	if game = 0
 	return
 	gosub CHATIN
-	SendInput t/sell %LASTWAVE%{enter}
+	sendinput t/sell %LASTWAVE%{enter}
 	gosub CHATOUT
 	return
 sellmenu:
@@ -6669,7 +8379,7 @@ sellmenu:
 	if game = 0
 		return
 	gosub CHATIN
-	SendInput t/sellmenu{enter}
+	sendinput t/sellmenu{enter}
 	gosub CHATOUT
 	return
 sellmenumove:
@@ -6680,7 +8390,7 @@ sellmenumove:
 	if game = 0
 		return
 	gosub CHATIN
-	SendInput t/sellmenu{enter}t 5{enter}
+	sendinput t/sellmenu{enter}t 5{enter}
 	gosub CHATOUT
 	return
 throwback:
@@ -6708,7 +8418,7 @@ fishinv:
 	if FISHSELL1 = Checked
 	{
 		gosub CHATIN
-		SendInput t/frel{enter}
+		sendinput t/frel{enter}
 		gosub CHATOUT
 	}
 	return
@@ -6774,7 +8484,7 @@ takedrugs:
 	if game = 0
 		return
 	gosub CHATIN
-	SendInput t/td %FTD%{enter}
+	sendinput t/td %FTD%{enter}
 	gosub CHATOUT
 	return
 info:
@@ -6784,7 +8494,7 @@ info:
 	if game = 0
 		return
 	gosub CHATIN
-	SendInput t/info{enter}
+	sendinput t/info{enter}
 	gosub CHATOUT
 	return
 jury:
@@ -6796,7 +8506,7 @@ jury:
 	If AUTOJURYON = 1
 	{
 		gosub CHATIN
-		SendInput t/jury{enter}
+		sendinput t/jury{enter}
 		gosub CHATOUT
 	}
 	return
@@ -6810,7 +8520,7 @@ DL:
 		return
 	SetCapsLockState , oFF
 	gosub CHATIN
-	SendInput t/dl{enter}
+	sendinput t/dl{enter}
 	gosub CHATOUT
 	return
 Cancel:
@@ -6820,7 +8530,7 @@ Cancel:
 	if game = 0
 		return
 	gosub CHATIN
-	SendInput t/Cancel{enter}
+	sendinput t/Cancel{enter}
 	gosub CHATOUT
 	return
 t1:
@@ -7267,6 +8977,7 @@ F12:
 	sendinput %F12%{enter}
 	gosub CHATOUT
 	return
+	
 BIND1:
 	if ENABLE_DEBUG = 1
 	LV_Add("","+ " A_ThisLabel)
@@ -7281,7 +8992,7 @@ BIND1:
 		return
 	}
 	IF CHATBOX = OPEN
-		SendInput 1
+		sendinput 1
 	else
 		sendinput %BIND1%{enter}
 	return
@@ -7300,7 +9011,7 @@ BIND2:
 	}
 	IF CHATBOX = OPEN
 	{
-		SendInput 2
+		sendinput 2
 		return
 	}
 	else
@@ -7322,7 +9033,7 @@ BIND3:
 		return
 	}
 	IF CHATBOX = OPEN
-		SendInput 3
+		sendinput 3
 	else
 		sendinput %BIND3%{enter}
 	return
@@ -7340,7 +9051,7 @@ BIND4:
 		return
 	}
 	IF CHATBOX = OPEN
-		SendInput 4 
+		sendinput 4 
 	else
 		sendinput %BIND4%{enter}
 	return
@@ -7358,7 +9069,7 @@ BIND5:
 		return
 	}
 	IF CHATBOX = OPEN
-		SendInput 5
+		sendinput 5
 	else
 		sendinput %BIND5%{enter}
 	return
@@ -7376,7 +9087,7 @@ BIND6:
 		return
 	}
 	IF CHATBOX = OPEN
-		SendInput 6
+		sendinput 6
 	else
 		sendinput %BIND6%{enter}
 	return
@@ -7394,7 +9105,7 @@ BIND7:
 		return
 	}
 	IF CHATBOX = OPEN
-		SendInput 7
+		sendinput 7
 	else
 		sendinput %BIND7%{enter}
 	return
@@ -7412,7 +9123,7 @@ BIND8:
 		return
 	}
 	IF CHATBOX = OPEN
-		SendInput 8
+		sendinput 8
 	else
 		sendinput %BIND8%{enter}
 	return
@@ -7430,7 +9141,7 @@ BIND9:
 		return
 	}
 	IF CHATBOX = OPEN
-		SendInput 9
+		sendinput 9
 	else
 		sendinput %BIND9%{enter}
 	return
@@ -7448,7 +9159,7 @@ BIND10:
 		return
 	}
 	IF CHATBOX = OPEN
-		SendInput 0
+		sendinput 0
 	else
 		sendinput %BIND10%{enter}
 	return
@@ -7466,7 +9177,7 @@ BIND11:
 		return
 	}
 	IF CHATBOX = OPEN
-		SendInput `-
+		sendinput `-
 	else
 		sendinput %BIND11%{enter}
 	return
@@ -7484,10 +9195,735 @@ BIND12:
 		return
 	}
 	IF CHATBOX = OPEN
-		SendInput `=
+		sendinput `=
 	else
-		sendinput %BIND12%{enter}
+		sendinput %BIND12%
 	return
+
+
+NUMPAD1:
+	if ENABLE_DEBUG = 1
+	LV_Add("","+ " A_ThisLabel)
+	gosub SAMPDETECT 
+	if game = 0
+	return
+	if BINDNUM1E = 0
+	{
+		sendinput {numpad1 down}
+		sleep 50
+		sendinput {numpad1 up}
+		return
+	}
+	IF CHATBOX = OPEN
+		sendinput {numpad1}
+	else
+	{
+		ifnotinstring, BINDNUM1, {enter}
+			CHATBOX = OPEN
+		sendinput %BINDNUM1%
+	}
+	return
+NUMPAD2:
+	if ENABLE_DEBUG = 1
+	LV_Add("","+ " A_ThisLabel)
+	gosub SAMPDETECT 
+	if game = 0
+	return
+	if BINDNUM2E = 0
+	{
+		sendinput {numpad2 down}
+		sleep 50
+		sendinput {numpad2 up}
+		return
+	}
+	IF CHATBOX = OPEN
+		sendinput {numpad2}
+	else
+	{
+		ifnotinstring, BINDNUM2, {enter}
+			CHATBOX = OPEN
+		sendinput %BINDNUM2%
+
+	}
+	return
+NUMPAD3:
+	if ENABLE_DEBUG = 1
+	LV_Add("","+ " A_ThisLabel)
+	gosub SAMPDETECT 
+	if game = 0
+	return
+	if BINDNUM3E = 0
+	{
+		sendinput {numpad3 down}
+		sleep 50
+		sendinput {numpad3 up}
+		return
+	}
+	IF CHATBOX = OPEN
+		sendinput {numpad3}
+	else
+	{
+		ifnotinstring, BINDNUM3, {enter}
+			CHATBOX = OPEN
+		sendinput %BINDNUM3%
+
+	}
+	return
+NUMPAD4:
+	if ENABLE_DEBUG = 1
+	LV_Add("","+ " A_ThisLabel)
+	gosub SAMPDETECT 
+	if game = 0
+	return
+	if BINDNUM4E = 0
+	{
+		sendinput {numpad4 down}
+		sleep 50
+		sendinput {numpad4 up}
+		return
+	}
+	IF CHATBOX = OPEN
+		sendinput {numpad4}
+	else
+	{
+		ifnotinstring, BINDNUM4, {enter}
+			CHATBOX = OPEN
+		sendinput %BINDNUM4%
+
+	}
+	return
+NUMPAD5:
+	if ENABLE_DEBUG = 1
+	LV_Add("","+ " A_ThisLabel)
+	gosub SAMPDETECT 
+	if game = 0
+	return
+	if BINDNUM5E = 0
+	{
+		sendinput {numpad5 down}
+		sleep 50
+		sendinput {numpad5 up}
+		return
+	}
+	IF CHATBOX = OPEN
+		sendinput {numpad5}
+	else
+	{
+		ifnotinstring, BINDNUM5, {enter}
+			CHATBOX = OPEN
+		sendinput %BINDNUM5%
+
+	}
+	return
+NUMPAD6:
+	if ENABLE_DEBUG = 1
+	LV_Add("","+ " A_ThisLabel)
+	gosub SAMPDETECT 
+	if game = 0
+	return
+	if BINDNUM6E = 0
+	{
+		sendinput {numpad6 down}
+		sleep 50
+		sendinput {numpad6 up}
+		return
+	}
+	IF CHATBOX = OPEN
+		sendinput {numpad6}
+	else
+	{
+		ifnotinstring, BINDNUM6, {enter}
+			CHATBOX = OPEN
+		sendinput %BINDNUM6%
+
+	}
+	return
+NUMPAD7:
+	if ENABLE_DEBUG = 1
+	LV_Add("","+ " A_ThisLabel)
+	gosub SAMPDETECT 
+	if game = 0
+	return
+	if BINDNUM7E = 0
+	{
+		sendinput {numpad7 down}
+		sleep 50
+		sendinput {numpad7 up}
+		return
+	}
+	IF CHATBOX = OPEN
+		sendinput {numpad7}
+	else
+	{
+		ifnotinstring, BINDNUM7, {enter}
+			CHATBOX = OPEN
+		sendinput %BINDNUM7%
+
+	}
+	return
+NUMPAD8:
+	if ENABLE_DEBUG = 1
+	LV_Add("","+ " A_ThisLabel)
+	gosub SAMPDETECT 
+	if game = 0
+	return
+	if BINDNUM8E = 0
+	{
+		sendinput {numpad8 down}
+		sleep 50
+		sendinput {numpad8 up}
+		return
+	}
+	IF CHATBOX = OPEN
+		sendinput {numpad8}
+	else
+	{
+		ifnotinstring, BINDNUM8, {enter}
+			CHATBOX = OPEN
+		sendinput %BINDNUM8%
+
+	}
+	return
+NUMPAD9:
+	if ENABLE_DEBUG = 1
+	LV_Add("","+ " A_ThisLabel)
+	gosub SAMPDETECT 
+	if game = 0
+	return
+	if BINDNUM9E = 0
+	{
+		sendinput {numpad9 down}
+		sleep 50
+		sendinput {numpad9 up}
+		return
+	}
+	IF CHATBOX = OPEN
+		sendinput {numpad9}
+	else
+	{
+		ifnotinstring, BINDNUM9, {enter}
+			CHATBOX = OPEN
+		sendinput %BINDNUM9%
+
+	}
+	return
+NUMPAD10:
+	if ENABLE_DEBUG = 1
+	LV_Add("","+ " A_ThisLabel)
+	gosub SAMPDETECT 
+	if game = 0
+	return
+	if BINDNUM10E = 0
+	{
+		sendinput {numpad0 down}
+		sleep 50
+		sendinput {numpad0 up}
+		return
+	}
+	IF CHATBOX = OPEN
+		sendinput {numpad0}
+	else
+	{
+		ifnotinstring, BINDNUM10, {enter}
+			CHATBOX = OPEN
+		sendinput %BINDNUM10%
+
+	}
+	return
+NUMPAD11:
+	if ENABLE_DEBUG = 1
+	LV_Add("","+ " A_ThisLabel)
+	gosub SAMPDETECT 
+	if game = 0
+	return
+	if BINDNUM11E = 0
+	{
+		sendinput {NumpadSub down}
+		sleep 50
+		sendinput {NumpadSub up}
+		return
+	}
+	IF CHATBOX = OPEN
+		sendinput {NumpadClear}
+	else
+	{
+		ifnotinstring, BINDNUM11, {enter}
+			CHATBOX = OPEN
+		sendinput %BINDNUM11%
+
+	}
+	return
+NUMPAD12:
+	if ENABLE_DEBUG = 1
+	LV_Add("","+ " A_ThisLabel)
+	gosub SAMPDETECT 
+	if game = 0
+	return
+	if BINDNUM12E = 0
+	{
+		sendinput {NumpadDiv down}
+		sleep 50
+		sendinput {NumpadDiv up}
+		return
+	}
+	IF CHATBOX = OPEN
+		sendinput {NumpadDiv}
+	else
+	{
+		ifnotinstring, BINDNUM12, {enter}
+			CHATBOX = OPEN
+		sendinput %BINDNUM12%
+
+	}
+	return
+NUMPAD13:
+	if ENABLE_DEBUG = 1
+	LV_Add("","+ " A_ThisLabel)
+	gosub SAMPDETECT 
+	if game = 0
+	return
+	if BINDNUM13E = 0
+	{
+		sendinput {NumpadMult down}
+		sleep 50
+		sendinput {NumpadMult up}
+		return
+	}
+	IF CHATBOX = OPEN
+		sendinput {NumpadMult}
+	else
+	{
+		ifnotinstring, BINDNUM13, {enter}
+			CHATBOX = OPEN
+		sendinput %BINDNUM13%
+
+	}
+	return
+NUMPAD14:
+	if ENABLE_DEBUG = 1
+	LV_Add("","+ " A_ThisLabel)
+	gosub SAMPDETECT 
+	if game = 0
+	return
+	if BINDNUM14E = 0
+	{
+		sendinput {NumpadEnter down}
+		sleep 50
+		sendinput {NumpadEnter up}
+		return
+	}
+	IF CHATBOX = OPEN
+		sendinput {NumpadEnter}
+	else
+	{
+		ifnotinstring, BINDNUM14, {enter}
+			CHATBOX = OPEN
+		sendinput %BINDNUM14%
+
+	}
+	return
+NUMPAD15:
+	if ENABLE_DEBUG = 1
+	LV_Add("","+ " A_ThisLabel)
+	gosub SAMPDETECT 
+	if game = 0
+	return
+	if BINDNUM15E = 0
+	{
+		sendinput {NumpadDel down}
+		sleep 50
+		sendinput {NumpadDel up}
+		return
+	}
+	IF CHATBOX = OPEN
+		sendinput {NumpadDel}
+	else
+	{
+		ifnotinstring, BINDNUM15, {enter}
+			CHATBOX = OPEN
+		sendinput %BINDNUM15%
+	}
+	return
+NUMPAD16:
+	if ENABLE_DEBUG = 1
+	LV_Add("","+ " A_ThisLabel)
+	gosub SAMPDETECT 
+	if game = 0
+	return
+	if BINDNUM16E = 0
+	{
+		sendinput {NumpadAdd down}
+		sleep 50
+		sendinput {NumpadAdd up}
+		return
+	}
+	IF CHATBOX = OPEN
+		sendinput {NumpadAdd}
+	else
+	{
+		ifnotinstring, BINDNUM16, {enter}
+			CHATBOX = OPEN
+		sendinput %BINDNUM16%
+	}
+	return
+
+
+NUMPADO1:
+	if ENABLE_DEBUG = 1
+	LV_Add("","+ " A_ThisLabel)
+	gosub SAMPDETECT 
+	if game = 0
+	return
+	if BINDNUMO1E = 0
+	{
+		sendinput {NumpadEnd down}
+		sleep 50
+		sendinput {NumpadEnd up}
+		return
+	}
+	IF CHATBOX = OPEN
+		sendinput {NumpadEnd}
+	else
+	{
+		ifnotinstring, BINDNUMO1, {enter}
+			CHATBOX = OPEN
+		sendinput %BINDNUMO1%
+	}
+	return
+NUMPADO2:
+	if ENABLE_DEBUG = 1
+	LV_Add("","+ " A_ThisLabel)
+	gosub SAMPDETECT 
+	if game = 0
+	return
+	if BINDNUMO1E = 0
+	{
+		sendinput {NumpadDown down}
+		sleep 50
+		sendinput {NumpadDown up}
+		return
+	}
+	IF CHATBOX = OPEN
+		sendinput {NumpadDown}
+	else
+	{
+		ifnotinstring, BINDNUMO2, {enter}
+			CHATBOX = OPEN
+		sendinput %BINDNUMO2%
+	}
+	return
+NUMPADO3:
+	if ENABLE_DEBUG = 1
+	LV_Add("","+ " A_ThisLabel)
+	gosub SAMPDETECT 
+	if game = 0
+	return
+	if BINDNUMO3E = 0
+	{
+		sendinput {NumpadPgdn down}
+		sleep 50
+		sendinput {NumpadPgdn up}
+		return
+	}
+	IF CHATBOX = OPEN
+		sendinput {NumpadPgdn}
+	else
+	{
+		ifnotinstring, BINDNUMO3, {enter}
+			CHATBOX = OPEN
+		sendinput %BINDNUMO3%
+	}
+	return
+NUMPADO4:
+	if ENABLE_DEBUG = 1
+	LV_Add("","+ " A_ThisLabel)
+	gosub SAMPDETECT 
+	if game = 0
+	return
+	if BINDNUMO4E = 0
+	{
+		sendinput {NumpadLeft down}
+		sleep 50
+		sendinput {NumpadLeft up}
+		return
+	}
+	IF CHATBOX = OPEN
+		sendinput {NumpadLeft}
+	else
+	{
+		ifnotinstring, BINDNUMO4, {enter}
+			CHATBOX = OPEN
+		sendinput %BINDNUMO4%
+	}
+	return
+NUMPADO5:
+	if ENABLE_DEBUG = 1
+	LV_Add("","+ " A_ThisLabel)
+	gosub SAMPDETECT 
+	if game = 0
+	return
+	if BINDNUMO1E = 0
+	{
+		sendinput {NumpadClear down}
+		sleep 50
+		sendinput {NumpadClear up}
+		return
+	}
+	IF CHATBOX = OPEN
+		sendinput {NumpadClear}
+	else
+	{
+		ifnotinstring, BINDNUMO5, {enter}
+			CHATBOX = OPEN
+		sendinput %BINDNUMO5%
+	}
+	return
+NUMPADO6:
+	if ENABLE_DEBUG = 1
+	LV_Add("","+ " A_ThisLabel)
+	gosub SAMPDETECT 
+	if game = 0
+	return
+	if BINDNUMO6E = 0
+	{
+		sendinput {NumpadRight down}
+		sleep 50
+		sendinput {NumpadRight up}
+		return
+	}
+	IF CHATBOX = OPEN
+		sendinput {NumpadRight}
+	else
+	{
+		ifnotinstring, BINDNUMO6, {enter}
+			CHATBOX = OPEN
+		sendinput %BINDNUMO6%
+	}
+	return
+NUMPADO7:
+	if ENABLE_DEBUG = 1
+	LV_Add("","+ " A_ThisLabel)
+	gosub SAMPDETECT 
+	if game = 0
+	return
+	if BINDNUMO1E = 0
+	{
+		sendinput {NumpadHome down}
+		sleep 50
+		sendinput {NumpadHome up}
+		return
+	}
+	IF CHATBOX = OPEN
+		sendinput {NumpadHome}
+	else
+	{
+		ifnotinstring, BINDNUMO7, {enter}
+			CHATBOX = OPEN
+		sendinput %BINDNUMO7%
+	}
+	return
+NUMPADO8:
+	if ENABLE_DEBUG = 1
+	LV_Add("","+ " A_ThisLabel)
+	gosub SAMPDETECT 
+	if game = 0
+	return
+	if BINDNUMO1E = 0
+	{
+		sendinput {NumpadUp down}
+		sleep 50
+		sendinput {NumpadUp up}
+		return
+	}
+	IF CHATBOX = OPEN
+		sendinput {NumpadUp}
+	else
+	{
+		ifnotinstring, BINDNUMO8, {enter}
+			CHATBOX = OPEN
+		sendinput %BINDNUMO8%
+	}
+	return
+NUMPADO9:
+	if ENABLE_DEBUG = 1
+	LV_Add("","+ " A_ThisLabel)
+	gosub SAMPDETECT 
+	if game = 0
+	return
+	if BINDNUMO9E = 0
+	{
+		sendinput {NumpadPgup down}
+		sleep 50
+		sendinput {NumpadPgup up}
+		return
+	}
+	IF CHATBOX = OPEN
+		sendinput {numpad9}
+	else
+	{
+		ifnotinstring, BINDNUMO9, {enter}
+			CHATBOX = OPEN
+		sendinput %BINDNUMO9%
+	}
+	return
+NUMPADO10:
+	if ENABLE_DEBUG = 1
+	LV_Add("","+ " A_ThisLabel)
+	gosub SAMPDETECT 
+	if game = 0
+	return
+	if BINDNUMO10E = 0
+	{
+		sendinput {NumpadIns down}
+		sleep 50
+		sendinput {NumpadIns up}
+		return
+	}
+	IF CHATBOX = OPEN
+		sendinput {NumpadIns}
+	else
+	{
+		ifnotinstring, BINDNUMO10, {enter}
+			CHATBOX = OPEN
+		sendinput %BINDNUMO10%
+	}
+	return
+NUMPADO11:
+	if ENABLE_DEBUG = 1
+	LV_Add("","+ " A_ThisLabel)
+	gosub SAMPDETECT 
+	if game = 0
+	return
+	if BINDNUMO11E = 0
+	{
+		sendinput {NumpadSub down}
+		sleep 50
+		sendinput {NumpadSub up}
+		return
+	}
+	IF CHATBOX = OPEN
+		sendinput {NumpadSub}
+	else
+	{
+		ifnotinstring, BINDNUMO11, {enter}
+			CHATBOX = OPEN
+		sendinput %BINDNUMO11%
+	}
+	return
+NUMPADO12:
+	if ENABLE_DEBUG = 1
+	LV_Add("","+ " A_ThisLabel)
+	gosub SAMPDETECT 
+	if game = 0
+	return
+	if BINDNUMO12E = 0
+	{
+		sendinput {NumpadDiv down}
+		sleep 50
+		sendinput {NumpadDiv up}
+		return
+	}
+	IF CHATBOX = OPEN
+		sendinput {NumpadDiv}
+	else
+	{
+		ifnotinstring, BINDNUMO12, {enter}
+			CHATBOX = OPEN
+		sendinput %BINDNUMO12%
+	}
+	return
+NUMPADO13:
+	if ENABLE_DEBUG = 1
+	LV_Add("","+ " A_ThisLabel)
+	gosub SAMPDETECT 
+	if game = 0
+	return
+	if BINDNUMO13E = 0
+	{
+		sendinput {NumpadMult down}
+		sleep 50
+		sendinput {NumpadMult up}
+		return
+	}
+	IF CHATBOX = OPEN
+		sendinput {NumpadMult}
+	else
+	{
+		ifnotinstring, BINDNUMO13, {enter}
+			CHATBOX = OPEN
+		sendinput %BINDNUMO13%
+	}
+	return
+NUMPADO14:
+	if ENABLE_DEBUG = 1
+	LV_Add("","+ " A_ThisLabel)
+	gosub SAMPDETECT 
+	if game = 0
+	return
+	if BINDNUMO14E = 0
+	{
+		sendinput {NumpadEnter down}
+		sleep 50
+		sendinput {NumpadEnter up}
+		return
+	}
+	IF CHATBOX = OPEN
+		sendinput {NumpadEnter}
+	else
+	{
+		ifnotinstring, BINDNUMO14, {enter}
+			CHATBOX = OPEN
+		sendinput %BINDNUMO14%
+	}
+	return
+NUMPADO15:
+	if ENABLE_DEBUG = 1
+	LV_Add("","+ " A_ThisLabel)
+	gosub SAMPDETECT 
+	if game = 0
+	return
+	if BINDNUMO15E = 0
+	{
+		sendinput {NumpadDot down}
+		sleep 50
+		sendinput {NumpadDot up}
+		return
+	}
+	IF CHATBOX = OPEN
+		sendinput {NumpadDot}
+	else
+	{
+		ifnotinstring, BINDNUMO15, {enter}
+			CHATBOX = OPEN
+		sendinput %BINDNUMO15%
+	}
+	return
+NUMPADO16:
+	if ENABLE_DEBUG = 1
+	LV_Add("","+ " A_ThisLabel)
+	gosub SAMPDETECT 
+	if game = 0
+	return
+	if BINDNUMO16E = 0
+	{
+		sendinput {NumpadAdd down}
+		sleep 50
+		sendinput {NumpadAdd up}
+		return
+	}
+	IF CHATBOX = OPEN
+		sendinput {NumpadAdd}
+	else
+	{
+		ifnotinstring, BINDNUMO16, {enter}
+			CHATBOX = OPEN
+		sendinput %BINDNUMO16%
+	}
+	return
+
+
+
+	
 lock:
 	if ENABLE_DEBUG = 1
 	LV_Add("","+ " A_ThisLabel)
@@ -7661,7 +10097,7 @@ delivery:
 	if game = 0
 	return
 	gosub CHATIN
-	sendinput t/%A_ThisLabel%{enter}
+	sendinput t/%DELIVERCMD%{enter}
 	gosub CHATOUT
 	return
 tip:
@@ -8212,7 +10648,7 @@ vehrepair:
 	if game = 0
 		return
 	gosub CHATIN
-	SendInput t/vehrepair{enter}
+	sendinput t/vehrepair{enter}
 	gosub CHATOUT
 	return
 Rod:
@@ -8226,7 +10662,7 @@ Rod:
 		return
 	
 	gosub CHATIN
-	SendInput t/Rod{enter}
+	sendinput t/Rod{enter}
 	gosub CHATOUT
 	return
 pointup:
@@ -8237,7 +10673,7 @@ pointup:
 	if game = 0
 		return
 	gosub CHATIN
-	SendInput t/pointup{enter}
+	sendinput t/pointup{enter}
 	gosub CHATOUT
 	return
 trick:
@@ -8248,7 +10684,7 @@ trick:
 	if game = 0
 		return
 	gosub CHATIN
-	SendInput t/trick{enter}
+	sendinput t/trick{enter}
 	gosub CHATOUT
 	return
 moneyrush:
@@ -8303,6 +10739,21 @@ gift:
 	sendinput t/gift{enter}
 	gosub CHATOUT
 	return
+	
+
+giftit:
+	SetTimer , %A_ThisLabel% , off
+		if ENABLE_DEBUG = 1
+	LV_Add("","+ " A_ThisLabel)
+	if KEYSKILLON = 0
+		return
+	gosub SAMPDETECT 
+	if game = 0
+		return
+	gosub CHATIN
+		sendinput t/givegift %giveto%{enter}t 2{enter}t <3{enter}
+	gosub CHATOUT
+	return
 givegift:
 	SetTimer , %A_ThisLabel% , off
 		if ENABLE_DEBUG = 1
@@ -8316,7 +10767,20 @@ givegift:
 	sendinput t/givegift %GIFTEE%{enter}t 2{enter}t <3{enter}
 	gosub CHATOUT
 	return
-
+deadgift:
+	SetTimer , %A_ThisLabel% , off
+		if ENABLE_DEBUG = 1
+	LV_Add("","+ " A_ThisLabel)
+	if KEYSKILLON = 0
+		return
+	gosub SAMPDETECT 
+	if game = 0
+		return
+	sleep 3000
+	gosub CHATIN
+	sendinput t/givegift %DEAD%{enter}t 3{enter}t <3{enter}
+	gosub CHATOUT
+	return
 giftspam:
 
 	SetTimer , %A_ThisLabel% , off
@@ -8328,11 +10792,9 @@ giftspam:
 	if game = 0
 		return
 	gosub CHATIN
-	sendinput t/givegift %giftspam%{enter}t 2{enter}t<3{enter}
+	;sendinput t/givegift %giftspam%{enter}t 2{enter}t<3{enter}
+	sendinput t/id  %giftspam%{enter}
 	gosub CHATOUT
-
-
-
 	giftspam++
 	if giftspam > 200
 		giftspam = 0
@@ -8559,6 +11021,7 @@ RandomLotto:
 	if game = 0
 	return
 	Random, RLOTTO , 1, 150
+	sleep 500
 	gosub CHATIN
 	sendinput t/lotto %RLOTTO%{enter}
 	gosub CHATOUT
@@ -8594,6 +11057,7 @@ Guilotto:
 	gosub SAMPDETECT 
 	if game = 0
 	return
+	sleep 3000
 	gosub CHATIN
 	sendinput t/lotto %GUILOTTO%{enter}
 	gosub CHATOUT
@@ -8641,13 +11105,12 @@ FPSTAB:
 		gosub FPSHIGH
 	return
 return
-
 ALTTAB:
 	if ENABLE_DEBUG = 1
 		LV_Add("","+ " A_ThisLabel)
 	game = 0
 	pause = 1
-	SendInput {ALT DOWN} {TAB} {ALT UP}
+	sendinput {ALT DOWN} {TAB} {ALT UP}
 return
 BIND_WINKEY:
 	if ENABLE_DEBUG = 1
@@ -8667,8 +11130,12 @@ APPSKEY:
 BIND_T:
 	if ENABLE_DEBUG = 1
 		LV_Add("","+ " A_ThisLabel)
-	SetCapsLockState , oFF
-	SendInput t
+	;SetCapsLockState , oFF
+	GetKeyState, ISCAPSON, CapsLock , T
+	if ISCAPSON = D
+		sendinput T
+	else
+		sendinput t
 	CHAT = 1
 	CHATBOX = OPEN
 	Clipboard =
@@ -8676,7 +11143,7 @@ BIND_T:
 BIND_ENTER:
 	if ENABLE_DEBUG = 1
 		LV_Add("","+ " A_ThisLabel)
-	SendInput {ENTER}
+	sendinput {ENTER}
 	CHAT = 0
 	CHATBOX = CLOSED
 	;Clipboard = 
@@ -8880,6 +11347,26 @@ Keybinds:
 			LV_Add("", "-  " A_ThisLabel)
 	gosub INIREAD
 	gui 5:Add, Text, x20 y20 w600 h20 , Keybinder                             EXAMPLE   T/FishSlap{enter}                                    Enable
+	
+		
+	gui 5:Add, GroupBox, x1000  y325 w220 h300 w250 , Enable/Disable Keybinds
+	Gui 5:Add, Button, x1000  y100 w100, Commands
+	Gui 5:Add, Button, x1000  y150 w100, TenCodes
+	
+	gui 5:Add, CheckBox, x1020  y350 w220 h20 vKEYPROGRAMON Checked%KEYPROGRAMON%, Programable
+	gui 5:Add, CheckBox, x1020  y380 w220 h20 vKEYANIMATIONON Checked%KEYANIMATIONON%, Preset Game Commands
+	gui 5:Add, CheckBox, x1020  y410 w220 h20 vKEYSKILLON Checked%KEYSKILLON%, Preset Item Purchase 
+	gui 5:Add, CheckBox, x1020  y440 w220 h20 vKEYMENUON Checked%KEYMENUON%, Preset Menu Binds
+	gui 5:Add, CheckBox, x1020  y470 w220 h20 vKEYFPSON Checked%KEYFPSON%, ALT+TAB Toggle FPS
+	gui 5:Add, CheckBox, x1020  y500 w220 h20 vKEYWINKEY Checked%KEYWINKEY%, LWIN Sit 8
+	gui 5:Add, CheckBox, x1020  y530 w220 h20 vKEYDLTOGGLE Checked%KEYDLTOGGLE%, CAPSLOCK Toggles DL
+	
+	gui 5:Add, CheckBox, x1020  y560 w220 h20 vKEYNUM Checked%KEYNUM%, Numlock On Binds
+	gui 5:Add, CheckBox, x1020  y590 w220 h20 vKEYNUMO Checked%KEYNUMO%, Numlock Off Binds
+	
+	
+	Gui 5:Add, Button, Default, Apply
+	
 	gui 5:Add, Text, x12 y60 w30 h20 , F1
 	gui 5:Add, Text, x12 y80 w30 h20 , F2
 	gui 5:Add, Text, x12 y100 w30 h20 , F3
@@ -8916,7 +11403,7 @@ Keybinds:
 	gui 5:Add, CheckBox, x422 y240 w50 h20 VF10E Checked%F10E%, 
 	gui 5:Add, CheckBox, x422 y260 w50 h20 VF11E Checked%F11E%, 
 	gui 5:Add, CheckBox, x422 y280 w50 h20 VF12E Checked%F12E%, 
-	gui 5:Add, Text, x20 y20 w600 h20 , Keybinder                             EXAMPLE   T/FishSlap{enter}                                    Enable
+	
 	gui 5:Add, Text, x500 y60 w30 h20 , 1
 	gui 5:Add, Text, x500 y80 w30 h20 , 2
 	gui 5:Add, Text, x500 y100 w30 h20 , 3
@@ -8954,15 +11441,109 @@ Keybinds:
 	gui 5:Add, CheckBox, x900 y260 w50 h20 vBIND11E Checked%BIND11E%, 
 	gui 5:Add, CheckBox, x900 y280 w50 h20 vBIND12E Checked%BIND12E%, 	
 	
-	gui 5:Add, GroupBox, x40  y325 w220 h235 w250 , Enable/Disable Keybinds
-	gui 5:Add, CheckBox, x60  y350 w220 h20 vKEYPROGRAMON Checked%KEYPROGRAMON%, Programable
-	gui 5:Add, CheckBox, x60  y380 w220 h20 vKEYANIMATIONON Checked%KEYANIMATIONON%, Preset Game Commands
-	gui 5:Add, CheckBox, x60  y410 w220 h20 vKEYSKILLON Checked%KEYSKILLON%, Preset Item Purchase 
-	gui 5:Add, CheckBox, x60  y440 w220 h20 vKEYMENUON Checked%KEYMENUON%, Preset Menu Binds
-	gui 5:Add, CheckBox, x60  y470 w220 h20 vKEYFPSON Checked%KEYFPSON%, ALT+TAB Toggle FPS
-	gui 5:Add, CheckBox, x60  y500 w220 h20 vKEYWINKEY Checked%KEYWINKEY%, LWIN Sit 8
-	gui 5:Add, CheckBox, x60  y530 w220 h20 vKEYDLTOGGLE Checked%KEYDLTOGGLE%, CAPSLOCK Toggles DL
-	Gui 5:Add, Button, Default, Apply
+	gui 5:Add, Text, X460 y330 w90 h20 , NUMLOCK OFF
+	gui 5:Add, Text, X460 y360 w90 h20 , NUM End
+	gui 5:Add, Text, X460 y380 w90 h20 , NUM Down
+	gui 5:Add, Text, X460 y400 w90 h20 , NUM PgDn
+	gui 5:Add, Text, X460 y420 w90 h20 , NUM Left
+	gui 5:Add, Text, X460 y440 w90 h20 , NUM 5
+	gui 5:Add, Text, X460 y460 w90 h20 , NUM Right
+	gui 5:Add, Text, X460 y480 W90 h20 , NUM Home
+	gui 5:Add, Text, X460 y500 W90 h20 , NUM Up
+	gui 5:Add, Text, X460 y520 W90 h20 , NUM PgUp
+	gui 5:Add, Text, X460 y540 W90 h20 , NUM Ins
+	gui 5:Add, Text, X460 y560 W90 h20 , NUM -
+	gui 5:Add, Text, X460 y580 W90 h20 , NUM /
+	gui 5:Add, Text, X460 y600 W90 h20 , NUM *
+	gui 5:Add, Text, X460 y620 W90 h20 , NUM Ent
+	gui 5:Add, Text, X460 y640 W90 h20 , NUM Del
+	gui 5:Add, Text, X460 y660 W90 h20 , NUM Add
+	
+	gui 5:Add, Edit, x520 y360 w370 h20  vBINDNUMO1 ,%BINDNUMO1%
+	gui 5:Add, Edit, x520 y380 w370 h20  vBINDNUMO2, %BINDNUMO2%
+	gui 5:Add, Edit, x520 y400 w370 h20 vBINDNUMO3, %BINDNUMO3%
+	gui 5:Add, Edit, x520 y420 w370 h20 vBINDNUMO4, %BINDNUMO4%
+	gui 5:Add, Edit, x520 y440 w370 h20 vBINDNUMO5, %BINDNUMO5%
+	gui 5:Add, Edit, x520 y460 w370 h20 vBINDNUMO6, %BINDNUMO6%
+	gui 5:Add, Edit, x520 y480 w370 h20 vBINDNUMO7, %BINDNUMO7%
+	gui 5:Add, Edit, x520 y500 w370 h20 vBINDNUMO8, %BINDNUMO8%
+	gui 5:Add, Edit, x520 y520 w370 h20 vBINDNUMO9, %BINDNUMO9%
+	gui 5:Add, Edit, x520 y540 w370 h20 vBINDNUMO10, %BINDNUMO10%
+	gui 5:Add, Edit, x520 y560 w370 h20 vBINDNUMO11, %BINDNUMO11%
+	gui 5:Add, Edit, x520 y580 w370 h20 vBINDNUMO12, %BINDNUMO12%
+	gui 5:Add, Edit, x520 y600 w370 h20 vBINDNUMO13, %BINDNUMO13%
+	gui 5:Add, Edit, x520 y620 w370 h20 vBINDNUMO14, %BINDNUMO14%
+	gui 5:Add, Edit, x520 y640 w370 h20 vBINDNUMO15, %BINDNUMO15%
+	gui 5:Add, Edit, x520 y660 w370 h20 vBINDNUMO16, %BINDNUMO16%
+	
+	gui 5:Add, CheckBox, x900 y360 w50 h20  vBINDNUMO1E  Checked%BINDNUMO1E%, 
+	gui 5:Add, CheckBox, x900 y380 w50 h20  vBINDNUMO2E  Checked%BINDNUMO2E%, 
+	gui 5:Add, CheckBox, x900 y400 w50 h20 vBINDNUMO3E  Checked%BINDNUMO3E%, 
+	gui 5:Add, CheckBox, x900 y420 w50 h20 vBINDNUMO4E  Checked%BINDNUMO4E%, 
+	gui 5:Add, CheckBox, x900 y440 w50 h20 vBINDNUMO5E  Checked%BINDNUMO5E%, 
+	gui 5:Add, CheckBox, x900 y460 w50 h20 vBINDNUMO6E  Checked%BINDNUMO6E%, 
+	gui 5:Add, CheckBox, x900 y480 w50 h20 vBINDNUMO7E  Checked%BINDNUMO7E%, 
+	gui 5:Add, CheckBox, x900 y500 w50 h20 vBINDNUMO8E  Checked%BINDNUMO8E%, 
+	gui 5:Add, CheckBox, x900 y520 w50 h20 vBINDNUMO9E  Checked%BINDNUMO9E%, 
+	gui 5:Add, CheckBox, x900 y540 w50 h20 vBINDNUMO10E Checked%BINDNUMO10E%, 
+	gui 5:Add, CheckBox, x900 y560 w50 h20 vBINDNUMO11E Checked%BINDNUMO11E%, 
+	gui 5:Add, CheckBox, x900 y580 w50 h20 vBINDNUMO12E Checked%BINDNUMO12E%, 
+	gui 5:Add, CheckBox, x900 y600 w50 h20 vBINDNUMO13E  Checked%BINDNUMO13E%, 
+	gui 5:Add, CheckBox, x900 y620 w50 h20 vBINDNUMO14E Checked%BINDNUMO14E%, 
+	gui 5:Add, CheckBox, x900 y640 w50 h20 vBINDNUMO15E Checked%BINDNUMO15E%, 
+	gui 5:Add, CheckBox, x900 y660 w50 h20 vBINDNUMO16E Checked%BINDNUMO16E%, 
+	gui 5:Add, Text, x12 y330 w90 h20 , NUMLOCK ON
+	gui 5:Add, Text, x12 y360 w90 h20 , NUM 1
+	gui 5:Add, Text, x12 y380 w90 h20 , NUM 2
+	gui 5:Add, Text, x12 y400 w90 h20 , NUM 3
+	gui 5:Add, Text, x12 y420 w90 h20 , NUM 4
+	gui 5:Add, Text, x12 y440 w90 h20 , NUM 5
+	gui 5:Add, Text, x12 y460 w90 h20 , NUM 6
+	gui 5:Add, Text, x12 y480 W90 h20 , NUM 7
+	gui 5:Add, Text, x12 y500 W90 h20 , NUM 8
+	gui 5:Add, Text, x12 y520 W90 h20 , NUM 9
+	gui 5:Add, Text, x12 y540 W90 h20 , NUM 0
+	gui 5:Add, Text, x12 y560 W90 h20 , NUM -
+	gui 5:Add, Text, x12 y580 W90 h20 , NUM /
+	gui 5:Add, Text, x12 y600 W90 h20 , NUM *
+	gui 5:Add, Text, x12 y620 W90 h20 , NUM Ent
+	gui 5:Add, Text, x12 y640 W90 h20 , NUM .
+	gui 5:Add, Text, x12 y660 W90 h20 , NUM +
+	
+	gui 5:Add, Edit, x60 y360 w350 h20  vBINDNUM1 ,%BINDNUM1%
+	gui 5:Add, Edit, x60 y380 w350 h20  vBINDNUM2, %BINDNUM2%
+	gui 5:Add, Edit, x60 y400 w350 h20 vBINDNUM3, %BINDNUM3%
+	gui 5:Add, Edit, x60 y420 w350 h20 vBINDNUM4, %BINDNUM4%
+	gui 5:Add, Edit, x60 y440 w350 h20 vBINDNUM5, %BINDNUM5%
+	gui 5:Add, Edit, x60 y460 w350 h20 vBINDNUM6, %BINDNUM6%
+	gui 5:Add, Edit, x60 y480 w350 h20 vBINDNUM7, %BINDNUM7%
+	gui 5:Add, Edit, x60 y500 w350 h20 vBINDNUM8, %BINDNUM8%
+	gui 5:Add, Edit, x60 y520 w350 h20 vBINDNUM9, %BINDNUM9%
+	gui 5:Add, Edit, x60 y540 w350 h20 vBINDNUM10, %BINDNUM10%
+	gui 5:Add, Edit, x60 y560 w350 h20 vBINDNUM11, %BINDNUM11%
+	gui 5:Add, Edit, x60 y580 w350 h20 vBINDNUM12, %BINDNUM12%
+	gui 5:Add, Edit, x60 y600 w350 h20 vBINDNUM13, %BINDNUM13%
+	gui 5:Add, Edit, x60 y620 w350 h20 vBINDNUM14, %BINDNUM14%
+	gui 5:Add, Edit, x60 y640 w350 h20 vBINDNUM15, %BINDNUM15%
+	gui 5:Add, Edit, x60 y660 w350 h20 vBINDNUM16, %BINDNUM16%
+	
+	gui 5:Add, CheckBox, x422 y360 w30 h20  vBINDNUM1E  Checked%BINDNUM1E%, 
+	gui 5:Add, CheckBox, x422 y380 w30 h20  vBINDNUM2E  Checked%BINDNUM2E%, 
+	gui 5:Add, CheckBox, x422 y400 w30 h20 vBINDNUM3E  Checked%BINDNUM3E%, 
+	gui 5:Add, CheckBox, x422 y420 w30 h20 vBINDNUM4E  Checked%BINDNUM4E%, 
+	gui 5:Add, CheckBox, x422 y440 w30 h20 vBINDNUM5E  Checked%BINDNUM5E%, 
+	gui 5:Add, CheckBox, x422 y460 w30 h20 vBINDNUM6E  Checked%BINDNUM6E%, 
+	gui 5:Add, CheckBox, x422 y480 w30 h20 vBINDNUM7E  Checked%BINDNUM7E%, 
+	gui 5:Add, CheckBox, x422 y500 w30 h20 vBINDNUM8E  Checked%BINDNUM8E%, 
+	gui 5:Add, CheckBox, x422 y520 w30 h20 vBINDNUM9E  Checked%BINDNUM9E%, 
+	gui 5:Add, CheckBox, x422 y540 w30 h20 vBINDNUM10E Checked%BINDNUM10E%, 
+	gui 5:Add, CheckBox, x422 y560 w30 h20 vBINDNUM11E Checked%BINDNUM11E%, 
+	gui 5:Add, CheckBox, x422 y580 w30 h20 vBINDNUM12E Checked%BINDNUM12E%, 
+	gui 5:Add, CheckBox, x422 y600 w30 h20 vBINDNUM13E  Checked%BINDNUM13E%, 
+	gui 5:Add, CheckBox, x422 y620 w30 h20 vBINDNUM14E Checked%BINDNUM14E%, 
+	gui 5:Add, CheckBox, x422 y640 w30 h20 vBINDNUM15E Checked%BINDNUM15E%, 
+	gui 5:Add, CheckBox, x422 y660 w30 h20 vBINDNUM16E Checked%BINDNUM16E%, 
+
 	gui 5:Show, , Keybinds
 return
 
@@ -9087,10 +11668,20 @@ LV_Add("","- " A_ThisLabel)
 	gosub INIREAD
 	gui 6:destroy
 return
+
+5ButtonTenCodes:
+	run http://crazybobs.net/website/cnr-10-codes
+return
+
+5ButtonCommands:
+	run http://crazybobs.net/website/cnr-commands
+return
+
 Home:
 LV_Add("", "-  "  A_ThisLabel)
 	run http://crazybobs.net/website/
 return
+
 Facebook:
 LV_Add("","- " A_ThisLabel)
 	run http://www.facebook.com/groups/315012238581148/
@@ -9100,38 +11691,49 @@ Forums:
 LV_Add("","- " A_ThisLabel)
 	run http://forums.crazybobs.net
 return
+
 Stats:
 LV_Add("","- " A_ThisLabel)
 	run http://www.crazybobs.net/mrx/webstats/UserStats.php?username=%Name%
 return
+
 Global:
 LV_Add("","- " A_ThisLabel)
 	run http://www.crazybobs.net/mrx/webstats/FlashWebstats.html
 return
+
 Map:
 LV_Add("","- " A_ThisLabel)
-	Run http://www.crazybobs.net/mrx/map/map_web.html
+	Run http://www.cbcnr.com/mrx/map/map_web.php
 return
+
 Commands:
 LV_Add("","- " A_ThisLabel)
 	Run http://crazybobs.net/website/cnr-commands
 return
+
 View:
 LV_Add("","- " A_ThisLabel)
+	msgbox %logfile%
 	Run %logfile%
 return
+
 Search:
 LV_Add("","- " A_ThisLabel)
 BOOT = 0
 gui, destroy
 	gosub findlogfile
 return
+
 MyMenuBar:
 LV_Add("", "-  "  A_ThisLabel)
 return
+
+
 MenuHandler:
 LV_Add("","- " A_ThisLabel)
 return
+
 MenuFileOpen:
 SetWorkingDir ,%USERPROFILE%\DOCUMENTS\GTASAN~1\SAMP\
 FileSelectFile, logfile ,1 , chatlog.txt
@@ -9190,24 +11792,24 @@ return
 
 CHECKPATH:
 RegRead, sadir, HKCU, Software\SAMP , gta_sa_exe
-if errorlevel = 0
-{
-	ifexist, %sadir%
-	{
-		SplitPath, sadir ,, samp, , , sadrv
-	}
-	IfNotExist, %sadir%
-		FileSelectFile, sadir , 1, C:\, Locate Grand Thieft Auto San Andreas, GTA_SA.EXE
-		if errorlevel 0
+
+IfNotExist, %sadir%
+	FileSelectFile, sadir , 1, C:\, Locate Grand Thieft Auto San Andreas, GTA_SA.EXE
+if errorlevel 0
 		{
 			MsgBox Requires GTA
 			ExitApp
 		}
-		RegWrite, REG_SZ, HKEY_CURRENT_USER, Software\SAMP\, gta_sa_exe, %sadir%
-}
-	if ENABLE_DEBUG = 1
-			LV_Add("","- " A_ThisLabel " = " sadir)
+ifexist, %sadir%
+	{
+	SplitPath, sadir ,, samp, , , sadrv
+	RegWrite, REG_SZ, HKEY_CURRENT_USER, Software\SAMP\, gta_sa_exe, %sadir%
+	}
+
+if ENABLE_DEBUG = 1
+		LV_Add("","- " A_ThisLabel " = " sadir)	
 return
+
 BUILDWHITE:
 return
 IfNotExist , %whitelist%
@@ -9355,7 +11957,7 @@ if game = 0
 }
 if game = 1
 {
-	SendInput t/q{enter}
+	sendinput t/q{enter}
 	Sleep 2000
 	gosub SAMPDETECT
 	if game = 1
@@ -9378,6 +11980,7 @@ Gui add, Button , 	x400 y310 , Create
 Gui add, Button , 	x500 y310 , Research
 Gui , show , ,Chatlog Selector for Fishlog
 	MSG = Found Drive
+SEARCHDRIVE = %USERPROFILE%
 research:
 LV_Delete()
 FILECOUNT = 0
@@ -9499,7 +12102,7 @@ if FISH = 1
 	if AUTOFISH = 0
 		return
 	gosub CHATIN
-	SendInput t/fish{enter}
+	sendinput t/fish{enter}
 	gosub CHATOUT
 }
 gosub FISHIN
@@ -9520,9 +12123,21 @@ FISH = 1
 FISHOUT = 0
 return
 CHATIN:
+gosub KEYSTATECHECK
+IfNotEqual, ISKEYDOWN , 0
+{
+	ISKEYHELD++
+	if ISKEYHELD < 10
+	{
+		Sleep 100
+		goto CHATIN
+	}
+}
 IF CHATBOX = OPEN
 	{
-		SendInput ^A^X{ENTER}
+		Input , CHATFIXTEXT, T0.2
+		sendinput ^A^X{ENTER}
+		;SoundPlay *8
 		if clipboard = NUL
 			clipcont = 0
 		else
@@ -9543,8 +12158,10 @@ if ENABLE_DEBUG = 1
 IF CHATBOX = OPEN
 	{
 		if clipcont = 1
-			SendInput t^V
+			sendinput t^V{right}%CHATFIXTEXT%
+		;SoundPlay *16
 	}
+	sleep 100
 		clipboard =
 		clipcont = 0
 return
@@ -9774,22 +12391,70 @@ return
 Files:
 Gui 7:  Add, Text,		x10  y10  w200 h40 , File Locations
 gui 7:  Add, CheckBox, 	x30  y40  w200 h40 vOUTPUTJOURNALON Checked%OUTPUTJOURNALON%,				Output history
-Gui 7:  Add, Text,     	x30  y100 w100 h30 , Log Location
-Gui 7:  Add, Edit, 		x140 y100 w600 h30 vCHATLOG , %logfile%
+Gui 7:  Add, Text,     	x30  y100 w100 h30 , Location
+Gui 7:  Add, Edit, 		x140 y100 w500 h30 vCHATLOG , %logfile%
+Gui 7:  Add, Button, 	x640 y100 w100 h30 , Chat
 Gui 7:  Add, Text, 		x30  y140 w100 h30 , Log to Dir
-Gui 7:  Add, Edit,		x140 y140 w600 h30 vlogdir , %logdir%
+Gui 7:  Add, Edit,		x140 y140 w500 h30 vlogdir , %logdir%
+Gui 7:  Add, Button, 	x640 y140 w100 h30 , Dir
 Gui 7:  Add, Text, 		x30  y180 w100 h30 , History
-Gui 7:  Add, Edit, 		x140 y180 w600 h30 vhistory , %history%
+Gui 7:  Add, Edit, 		x140 y180 w500 h30 vhistory , %history%
+Gui 7:  Add, Button, 	x640 y180 w100 h30 , History
 Gui 7:  Add, Text, 		x30  y220 w100 h30 , Whitelist
-Gui 7:  Add, Edit, 		x140 y220 w600 h30 vwhitelist , %whitelist%
+Gui 7:  Add, Edit, 		x140 y220 w500 h30 vwhitelist , %whitelist%
+Gui 7:  Add, Button, 	x640 y220 w100 h30 , Whitelist
 Gui 7:  Add, Text, 		x30  y260 w100 h30 , Blacklist
-Gui 7:  Add, Edit, 		x140 y260 w600 h30 vblacklist , %blacklist%
+Gui 7:  Add, Edit, 		x140 y260 w500 h30 vblacklist , %blacklist%
+Gui 7:  Add, Button, 	x640 y260 w100 h30 , Blacklist
+Gui 7:  Add, Text, 		x30  y300 w100 h30 , Spammers
+Gui 7:  Add, Edit, 		x140 y300 w500 h30 vspamlist , %spamlist%
+Gui 7:  Add, Button, 	x640 y300 w100 h30 , Settings
+Gui 7:  Add, Text, 		x30  y340 w100 h30 , IniFile
+Gui 7:  Add, Edit, 		x140 y340 w500 h30 vinifile, %inifile%
+Gui 7:  Add, Button, 	x640 y340 w100 h30 , Inifile
 ;Gui 7:  Add, Text, x29 y2306 w100 h30 , logfile
 ;Gui 7:  Add, Edit, x139 y306 w600 h30 , Edit
 ;Gui 7:  Add, Button, x319 y356 w90 h30 , Defaults
 ;Gui 7:  Add, Button, x439 y356 w90 h30 , Apply
-Gui 7:  Show, w800 h340
+Gui 7:  Show, w800 h380
 return
+
+7buttonChat:
+IfExist %logfile%
+run %logfile%
+return
+
+7buttonDir:
+run %logdir%
+return
+
+7buttonHistory:
+IfNotExist %history%
+	FileCreateDir, %history%
+IfExist %history%
+run %history%
+return
+
+7buttonWhitelist:
+IfExist %whitelist%
+run %whitelist%
+return
+
+7buttonBlacklist:
+IfExist %blacklist%
+run %blacklist%
+return
+
+7buttonSpammers:
+IfExist %spamlist%
+run %spamlist%
+return
+
+7buttonInifile:
+IfExist %inifile%
+run %inifile%
+return
+
 
 7GuiClose:
 LV_Add("","- " A_ThisLabel)
@@ -9938,7 +12603,7 @@ return
 
 Automation:
 Gui 9: Add, CheckBox, x40 y30   w280 h40 vAUTOLOGONON  			Checked%AUTOLOGONON%		, Login 
-Gui 9: Add, CheckBox, x40 y70   w280 h40 vAUTOTRUCKING  		Checked%vAUTOTRUCKING%		, Display Trucking Menu
+Gui 9: Add, CheckBox, x40 y70   w280 h40 vAUTOTRUCKING			Checked%AUTOTRUCKING%		, Display Trucking Menu
 Gui 9: Add, CheckBox, x40 y110  w280 h40 vAUTOGPSMISSION 		Checked%AUTOGPSMISSION%		, Truck Delivery GPS
 Gui 9: Add, CheckBox, x40 y150  w280 h40 vAUTOGPSCARSELL  		Checked%AUTOGPSCARSELL%		, GPS to Crane
 Gui 9: Add, CheckBox, x40 y190  w280 h40 vAUTTOACCEPTOFFER   	Checked%AUTTOACCEPTOFFER%	, View Vendor Inventory
@@ -9961,6 +12626,7 @@ Gui 9: Add, CheckBox, x320 y310 w280 h40 vAUTOTRASHMISSION  	Checked%AUTOTRASHMI
 Gui 9: Add, CheckBox, x320 y350 w280 h40 vAUTOOFFERTOWAVER  	Checked%AUTOOFFERTOWAVER%	, Auto Offer Items
 Gui 9: Add, CheckBox, x320 y390 w280 h40 vAUTOFISHDISPLAY   	Checked%AUTOFISHDISPLAY%	, Display Fish Menu
 Gui 9: Add, CheckBox, x320 y430 w280 h40 vAUTOCOLORON  			Checked%AUTOCOLORON%		, Auto Car Coloring
+Gui 9: Add, CheckBox, x320 y470 w280 h40 vAUTOIGNORE			Checked%AUTOIGNORE%		, Auto Ignore Spammers
 
 Gui 9: Add, GroupBox, x9 y6 w600 h580 , Enable/Disable
 Gui 9: Show, , Fishlog Automation
@@ -9999,19 +12665,20 @@ LV_Add("","- " A_ThisLabel)
 	gui 10:destroy
 return
 
+
+
+
+
 TIMESTATS:
 	if AUTOPLAYDICE = 1
 		IF LASTDICEFAIL = 0
 		{
-		Random, dicetimmer , 10000, 30000
-
+			Random, dicetimmer , 10000, 30000
 			settimer, playdice , %dicetimmer%
 		}
-	
-	LV_Add("", "# ")
+	if DEBUG_TIME = 1
+		LV_Add("", "# ")
 	TIMECOUNT ++
-	
-
 
 	V1 = %PHRASELINES%
 	V2 = %NOMATCHPHRASELINES%
@@ -10019,9 +12686,11 @@ TIMESTATS:
 	V4 = %FISHINGATTEMPT%
 	V5 = %FISHINGSUCCESS%
 	V6 = %FISHTHROWN%
+	
 	result:=(v1/v2)
 	result2:=(v4/v5)
 	result3:=(v5/v6)
+	
 	MATCHPERCENT:=(v3/result)
 	MATCHPERCENT:=Ceil(MATCHPERCENT)
 	FISHPERCENT:=(v3/result2)
@@ -10084,7 +12753,6 @@ TIMESTATS:
 	WORKERS = 
 	OFFICERS = 
 	ARRESTED = 
-
 	QUITTERS =
 	JOINERS =
 
@@ -10094,18 +12762,7 @@ TIMESTATS:
 	;LV_Add("", "# ")
 return
 
-$!^z::
-SendInput {W DOWN}
-return
 
-$!^x::
-SendInput {W Up}
-return
-
-
-$!^HOME::
-SendInput {MButton DOWN}
-return
 
 CHECKIGNORE:
 loop, read, %logdir%\spammers.txt
@@ -10129,8 +12786,6 @@ if VAR7 =
 }
 loop, read, %logdir%\spammers.txt	
 	if VAR7 = %A_LoopReadLine%
-
-
 		ADDEDALREADY = 1
 if ADDEDALREADY = 1
 	LV_Add("", " !ADDIGNORE " VAR7 " Already added ")
@@ -10153,3 +12808,5 @@ if WATCHLOGON = 1
 		return
 	}	
 return
+
+	!^+Esc:: run taskkill /im gta* /f

