@@ -17,12 +17,13 @@ PLAYER_IN_VEHICLE =  1
 ENABLE_DEBUG_ERROR = 1
 ENABLE_DEBUG_PERSON = 1
 GROUP_INVITE_ENABLED = 1
-
+PERSONALITY_MOURN_COOLDOWN = 0
 
 CHATBOX = 0
 giftspam = 43
 HK_TARGET = Grand theft auto San Andreas
 SetTimer, PERSONALITY_CLIPTO_COOLDOWN, 180000
+SetTimer, PERSONALITY_MOURN_COOLDOWN, 10000
 
 ; GUI Defualt location
 X= 100
@@ -242,7 +243,7 @@ BOOT = 1
 		LV_Add("", " Fishlog Ready")
 	if CANCELED = 1
 		LV_Add("", "Click File - Open and locate chatlog.txt Or Chatlog - Search to Enable Automation")
-	if CANCELED != 1
+	else
 	{
 		gosub read
 		if lastReadRow = 0
@@ -532,7 +533,7 @@ if ( VAR2 = "Fishing...") && ( VAR4 =  "Please" )
 if ( VAR2 = "Welcome" ) && ( VAR3 = "To" )
 {
 	LV_Add("","? Welcome")
-	if ( VAR4 = "{00AAFF}24/7" ) || ( VAR4 = "{00AAFF}Xoomer") || ( VAR4 = "{00AAFF}Well" ) || ( VAR4 = "{00AAFF}Burger" ) || ( VAR4 = "{00AAFF}Cluckin'" )  || ( VAR4 = "{00AAFF}The" ) || ( VAR4 = "{00AAFF}Ammunation{FFFFFF}.") || ( VAR5 = "Sex" )	|| ( VAR4 = "{00AAFF}Binco{FFFFFF}.") || ( VAR4 = "{00AAFF}SubUrban{FFFFFF}." ) || ( VAR4 = "{00AAFF}ProLaps{FFFFFF}." ) || ( VAR4 = "{00AAFF}Victim{FFFFFF}." ) || ( VAR4 = "{00AAFF}Didier" )	|| ( VAR4 = "{00AAFF}Zip{FFFFFF}.") || ( VAR5 = "Barber" ) || ( VAR6 = "Shop{FFFFFF}." ) || ( VAR5 = "Crack" ) || ( VAR6 = "House{FFFFFF}." ) || ( VAR5 = "Diner{FFFFFF}." ) || ( VAR5 = "Bar{FFFFFF}." )
+	if ( VAR4 = "{00AAFF}24/7" ) || ( VAR4 = "{00AAFF}Xoomer") || ( VAR4 = "{00AAFF}Well" ) || ( VAR4 = "{00AAFF}Burger" ) || ( VAR4 = "{00AAFF}Cluckin'" )  || ( VAR4 = "{00AAFF}The" ) || ( VAR4 = "{00AAFF}Ammunation{FFFFFF}.") || ( VAR5 = "Sex" )	|| ( VAR4 = "{00AAFF}Binco{FFFFFF}.") || ( VAR4 = "{00AAFF}SubUrban{FFFFFF}." ) || ( VAR4 = "{00AAFF}ProLaps{FFFFFF}." ) || ( VAR4 = "{00AAFF}Victim{FFFFFF}." ) || ( VAR4 = "{00AAFF}Didier" )	|| ( VAR4 = "{00AAFF}Zip{FFFFFF}.") || ( VAR5 = "Barber" ) || ( VAR6 = "Shop{FFFFFF}." ) || ( VAR5 = "Crack" ) || ( VAR6 = "House{FFFFFF}." ) || ( VAR5 = "Diner{FFFFFF}." ) || ( VAR5 = "Bar{FFFFFF}." ) || ( VAR4 = "{00AAFF}SupaSave{FFFFFF}.")
 	{
 		if ENABLE_DEBUG_HELP = 1
 			LV_Add("","? Welcome To " VAR4 " Havefish " HAVEFISH " Auto Sell " AUTOFISHSELL)
@@ -557,7 +558,6 @@ if ( VAR2 = "Welcome" ) && ( VAR3 = "To" )
 			{
 				PERSONALITY_CLIPTO_COOLDOWN = 1
 				SetTimer, HOTKEY_Shoplift , 3000
-				;SetTimer, PERSONALITY_CLIPTO_COOLDOWN, 90000
 			}
 		}		
 	}
@@ -1391,7 +1391,14 @@ if VAR2 = The
 		IfNotInString , MURDERS , *Chicken
 			MURDERS = %MURDERS% *Chicken %a_space%
 		if PERSONALITY_MOURN = 1
-			settimer, mourn, 10
+		{
+			if PERSONALITY_MOURN_COOLDOWN = 0
+			{
+				settimer, mourn, 10
+				PERSONALITY_MOURN_COOLDOWN = 1
+				SetTimer, PERSONALITY_MOURN_COOLDOWN , 5000
+			}
+		}
 		return
 	}		
 	if VAR3 = Color
@@ -2163,8 +2170,14 @@ if ( VAR4 = "Has" ) && ( VAR5 = "Been" ) && ( VAR6 = "Stabbed" ) && ( VAR7 = "To
 		DEAD = %VAR2%
 		
 		if PERSONALITY_MOURN = 1
-			settimer, mourn, 10
-		;settimer, deadgift, 5000
+		{
+			if PERSONALITY_MOURN_COOLDOWN = 0
+			{
+				settimer, mourn, 10
+				PERSONALITY_MOURN_COOLDOWN = 1
+				SetTimer, PERSONALITY_MOURN_COOLDOWN , 5000
+			}
+		}
 	return
 }
 
@@ -2181,8 +2194,14 @@ if VAR6 = Insulted
 		DEAD = %VAR2%
 		
 		if PERSONALITY_MOURN = 1
-			settimer, mourn, 10
-		;settimer, deadgift, 5000
+		{
+			if PERSONALITY_MOURN_COOLDOWN = 0
+			{
+				settimer, mourn, 10
+				PERSONALITY_MOURN_COOLDOWN = 1
+				SetTimer, PERSONALITY_MOURN_COOLDOWN , 5000
+			}
+		}
 	return
 	}
 }
@@ -2195,7 +2214,14 @@ if VAR5 = Puked
 		IfNotInString , DEATHS , %VAR2%
 			DEATHS = %DEATHS% %VAR2% %a_space%
 		if PERSONALITY_MOURN = 1
-			settimer, mourn, 10
+		{
+			if PERSONALITY_MOURN_COOLDOWN = 0
+			{
+				settimer, mourn, 10
+				PERSONALITY_MOURN_COOLDOWN = 1
+				SetTimer, PERSONALITY_MOURN_COOLDOWN , 5000
+			}
+		}
 	return
 	}
 }
@@ -2208,8 +2234,14 @@ if VAR6 = Shot
 			DEATHS = %DEATHS% %VAR2% %a_space%
 		DEAD = %VAR2%
 		; settimer, deadgift, 5000
-		if PERSONALITY_MOURN = 1
-			settimer, mourn, 10
+		{
+			if PERSONALITY_MOURN_COOLDOWN = 0
+			{
+				settimer, mourn, 10
+				PERSONALITY_MOURN_COOLDOWN = 1
+				SetTimer, PERSONALITY_MOURN_COOLDOWN , 5000
+			}
+		}
 		return
 	}
 }
@@ -2226,8 +2258,14 @@ if VAR6 = Attacked
 			MURDERS = %MURDERS% *SeaMonster %a_space%
 		DEAD = %VAR2%
 		; settimer, deadgift, 5000
-		if PERSONALITY_MOURN = 1
-			settimer, mourn, 10
+		{
+			if PERSONALITY_MOURN_COOLDOWN = 0
+			{
+				settimer, mourn, 10
+				PERSONALITY_MOURN_COOLDOWN = 1
+				SetTimer, PERSONALITY_MOURN_COOLDOWN , 5000
+			}
+		}
 		return
 	}	
 }
@@ -2242,7 +2280,14 @@ if VAR5 = killed
 		DEAD = %VAR2%
 		; settimer, deadgift, 5000
 		if PERSONALITY_MOURN = 1
-			settimer, mourn, 10
+		{
+			if PERSONALITY_MOURN_COOLDOWN = 0
+			{
+				settimer, mourn, 10
+				PERSONALITY_MOURN_COOLDOWN = 1
+				SetTimer, PERSONALITY_MOURN_COOLDOWN , 5000
+			}
+		}
 		return
 	}	
 	if VAR7 = Sea
@@ -2254,7 +2299,14 @@ if VAR5 = killed
 		DEAD = %VAR2%
 		; settimer, deadgift, 5000
 		if PERSONALITY_MOURN = 1
-			settimer, mourn, 10
+		{
+			if PERSONALITY_MOURN_COOLDOWN = 0
+			{
+				settimer, mourn, 10
+				PERSONALITY_MOURN_COOLDOWN = 1
+				SetTimer, PERSONALITY_MOURN_COOLDOWN , 5000
+			}
+		}
 		return
 	}	
 }
@@ -2269,7 +2321,14 @@ if VAR5 = killed
 			DEAD = %VAR2%
 		; settimer, deadgift, 5000
 		if PERSONALITY_MOURN = 1
-			settimer, mourn, 10
+		{
+			if PERSONALITY_MOURN_COOLDOWN = 0
+			{
+				settimer, mourn, 10
+				PERSONALITY_MOURN_COOLDOWN = 1
+				SetTimer, PERSONALITY_MOURN_COOLDOWN , 5000
+			}
+		}
 		return
 	}
 }
@@ -2284,7 +2343,14 @@ if VAR4 = Died
 			DEAD = %VAR2%
 		; settimer, deadgift, 5000
 		if PERSONALITY_MOURN = 1
-			settimer, mourn, 10
+		{
+			if PERSONALITY_MOURN_COOLDOWN = 0
+			{
+				settimer, mourn, 10
+				PERSONALITY_MOURN_COOLDOWN = 1
+				SetTimer, PERSONALITY_MOURN_COOLDOWN , 5000
+			}
+		}
 	return
 }
 if VAR5 = Died
@@ -2300,7 +2366,14 @@ if VAR5 = Died
 			DEAD = %VAR2%
 		; settimer, deadgift, 5000
 		if PERSONALITY_MOURN = 1
-			settimer, mourn, 10
+		{
+			if PERSONALITY_MOURN_COOLDOWN = 0
+			{
+				settimer, mourn, 10
+				PERSONALITY_MOURN_COOLDOWN = 1
+				SetTimer, PERSONALITY_MOURN_COOLDOWN , 5000
+			}
+		}
 		return
 	}
 	if VAR6 = From
@@ -2312,7 +2385,14 @@ if VAR5 = Died
 		DEAD = %VAR2%
 		; settimer, deadgift, 5000
 		if PERSONALITY_MOURN = 1
-			settimer, mourn, 10
+		{
+			if PERSONALITY_MOURN_COOLDOWN = 0
+			{
+				settimer, mourn, 10
+				PERSONALITY_MOURN_COOLDOWN = 1
+				SetTimer, PERSONALITY_MOURN_COOLDOWN , 5000
+			}
+		}
 		return
 	}
 	if ENABLE_DEBUG_DEAD = 1
@@ -2324,7 +2404,14 @@ if VAR5 = Died
 		;DEAD = %VAR2%
 		;; settimer, deadgift, 5000
 		if PERSONALITY_MOURN = 1
-			settimer, mourn, 10
+		{
+			if PERSONALITY_MOURN_COOLDOWN = 0
+			{
+				settimer, mourn, 10
+				PERSONALITY_MOURN_COOLDOWN = 1
+				SetTimer, PERSONALITY_MOURN_COOLDOWN , 5000
+			}
+		}
 	return
 }
 IfInString, VAR4 , Died
@@ -2340,7 +2427,14 @@ IfInString, VAR4 , Died
 		DEAD = %VAR2%
 		; settimer, deadgift, 5000
 		if PERSONALITY_MOURN = 1
-			settimer, mourn, 10
+		{
+			if PERSONALITY_MOURN_COOLDOWN = 0
+			{
+				settimer, mourn, 10
+				PERSONALITY_MOURN_COOLDOWN = 1
+				SetTimer, PERSONALITY_MOURN_COOLDOWN , 5000
+			}
+		}
 		return
 	}
 	if ENABLE_DEBUG_DEAD = 1
@@ -2350,7 +2444,14 @@ IfInString, VAR4 , Died
 		DEAD = %VAR2%
 		; settimer, deadgift, 5000
 		if PERSONALITY_MOURN = 1
-			settimer, mourn, 10
+		{
+			if PERSONALITY_MOURN_COOLDOWN = 0
+			{
+				settimer, mourn, 10
+				PERSONALITY_MOURN_COOLDOWN = 1
+				SetTimer, PERSONALITY_MOURN_COOLDOWN , 5000
+			}
+		}
 	return
 }
 
@@ -2368,7 +2469,14 @@ if VAR6 = Death
 		DEAD = %VAR2%
 		; settimer, deadgift, 5000
 		if PERSONALITY_MOURN = 1
-			settimer, mourn, 10
+		{
+			if PERSONALITY_MOURN_COOLDOWN = 0
+			{
+				settimer, mourn, 10
+				PERSONALITY_MOURN_COOLDOWN = 1
+				SetTimer, PERSONALITY_MOURN_COOLDOWN , 5000
+			}
+		}
 		return
 	}
 	if ENABLE_DEBUG_DEAD = 1
@@ -2378,7 +2486,14 @@ if VAR6 = Death
 		IfNotInString , MURDERS , %VAR10%
 			MURDERS = %MURDERS% %VAR10% %a_space%
 		if PERSONALITY_MOURN = 1
-			settimer, mourn, 10
+		{
+			if PERSONALITY_MOURN_COOLDOWN = 0
+			{
+				settimer, mourn, 10
+				PERSONALITY_MOURN_COOLDOWN = 1
+				SetTimer, PERSONALITY_MOURN_COOLDOWN , 5000
+			}
+		}
 	return
 }
 
@@ -9230,7 +9345,7 @@ SEND_9:
 	SetTimer , %A_ThisLabel% , off
 	if ENABLE_DEBUG = 1
 		LV_Add("","- " A_ThisLabel )
-	StringTrimRight, SEND_NUM , A_ThisLabel, 5
+	StringTrimLeft, SEND_NUM , A_ThisLabel, 5
 	cmd(" "SEND_NUM)
 	
 return
@@ -10587,7 +10702,7 @@ SAMPDETECT:
 		SetTimer, SAMPDETECT, %SAMPDETECT%
 	}
 
-	if ENABLE_DEBUG = 1
+	if ENABLE_DEBUG = 2
 		LV_Add("","- " A_ThisLabel " = " game)
 	if 	game = 1
 	{
@@ -10864,7 +10979,7 @@ IF CHATBOX = 1
 		SendInput ^A^X{ENTER}
 		if clipboard = NUL
 			clipcont = 0
-		if clipboard != NUL
+		else
 			clipcont = 1
 	}
 if ENABLE_DEBUG = 1
@@ -11498,7 +11613,7 @@ cmd(x)
 				SendInput ^a^x 
 				SendInput %x%{ENTER}
 			}
-			if FoundPos != 1
+			else
 			{
 				clipboard =
 				SendInput ^a^x 
@@ -11510,7 +11625,7 @@ cmd(x)
 			SendInput t^V
 		}
 	}
-	IF CHATBOX = 1
+	ELSE
 	{
 			FoundPos := RegExMatch(x, "^t")
 			if FoundPos = 1
@@ -11553,7 +11668,7 @@ hotcmd(x,y)
 
 		
 	}
-	IF CHATBOX = 0
+	ELSE
 	{
 		
 		IfInString ,x , _
@@ -11563,7 +11678,7 @@ hotcmd(x,y)
 			StringReplace, z , z , _ , %a_space% , all
 			SendInput t/%z%{enter}
 		}
-		IfNotInString ,x , _
+		else
 			SendInput t/%x%{enter}
 	}
 	
@@ -11663,7 +11778,7 @@ Label:
 
 	setHK(num, savedHK%num%, HK%num%)
 }
- IfNotEqual (savedHK%num% || HK%num%)
+else
 	setHK(num, savedHK%num%, HK%num%)
 return
 
@@ -12432,12 +12547,18 @@ hotcmd(HOTCMD,A_ThisHotkey)
 KeyWait, %A_ThisHotkey%
 return
 
+PERSONALITY_MOURN_COOLDOWN:
+SetTimer, %A_ThisLabel%, off
+if ENABLE_DEBUG = 1
+	LV_Add("", " Person Mourn Cooldown")
+PERSONALITY_MOURN_COOLDOWN = 0
+return
+
 PERSONALITY_CLIPTO_COOLDOWN:
 SetTimer, %A_ThisLabel%, off
 if ENABLE_DEBUG = 1
 	LV_Add("", " Person Clipto Cooldown")
 PERSONALITY_CLIPTO_COOLDOWN = 0
-;SoundPlay *64
 return
 
 
